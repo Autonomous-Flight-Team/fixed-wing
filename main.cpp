@@ -11,6 +11,30 @@ SemaphoreHandle_t dataMutex;
 int STACK_DEPTH = 512;
 int[] priority = {1,2,3,4};
 
+typedef struct {
+    // IMU
+        // Linear Acceleration
+        float ax, ay, az;
+        // Rotational Velocity
+        float gx, gy, gz;
+    // Barometer
+        float altitude;
+        float pressure;
+        float temp;
+    // GPS
+        // Latitude
+        double lat;
+        // Longitude
+        double lon;
+        float gps_altitude;
+        // Linear Velocity
+        float vs; 
+
+} SensorData_t;
+
+typedef struct {
+    //TODO
+} ControlOutput_t;
 
 int main(void) {
     HardwareInit();
