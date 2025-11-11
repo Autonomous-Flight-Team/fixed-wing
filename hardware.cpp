@@ -1,3 +1,5 @@
+// READ THE README.md FOR CODE QUALITY STANDARDS
+
 #include "hardware.h"
 
 bool HardwareInit() {

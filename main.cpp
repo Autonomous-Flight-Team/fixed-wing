@@ -1,3 +1,5 @@
+// READ THE README.md FOR CODE QUALITY STANDARDS
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
