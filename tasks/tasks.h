@@ -12,7 +12,8 @@ extern SemaphoreHandle_t dataMutex;
 
 
 // Task Declarations
-void SensorTask(void *pvParameters);
+void ImuBaroTask(void *pvParameters);
+void GPSTask(void *pvParameters);
 void StateTask(void *pvParameters);
 void PIDTask(void *pvParameters);
 void DSHOTTask(void *pvParameters);

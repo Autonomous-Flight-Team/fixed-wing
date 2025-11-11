@@ -48,7 +48,8 @@ int main(void) {
     // pvParameters - Parameters passed into task
     // uxPriority - Priority level (lower is more priority)
     // pxCreatedTask - Pointer to task handle
-    xTaskCreate(SensorTask, "Sensor", STACK_DEPTH, NULL, *priority + 1, NULL);
+    xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, *priority + 1, NULL);
+    xTaskCreate(GPSTask, "GPS", STACK_DEPTH, NULL, *priority + 2, NULL);
     xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, *priority, NULL);
     xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);
     xTaskCreate(DSHOTTask, "DShot", STACK_DEPTH, NULL, *priority, NULL);
