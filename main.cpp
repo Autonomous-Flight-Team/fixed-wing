@@ -57,8 +57,8 @@ int main(void) {
     xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, *priority, NULL);
     xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);
     xTaskCreate(DSHOTTask, "DShot", STACK_DEPTH, NULL, *priority, NULL);
-    xTaskCreate(GSARxTask, "GSARx", STACK_DEPTH, NULL, *priority+1, NULL);
-    xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority+1, NULL);
+    xTaskCreate(GSARxTask, "GSARx", STACK_DEPTH, NULL, *priority+3, NULL);
+    xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority+3, NULL);
 
     vTaskStartScheduler();
 

@@ -7,6 +7,7 @@
 
 const float SEA_LEVEL_PRESSURE = 1013.25;
 const float KMPH_MPS_CONVERT_RATE = 3.6;
+
 const int MS_PER_TICK = 5; // 200 Hz
 
 // Gets IMU and Barometer data, 
