@@ -1,4 +1,6 @@
-// Author: Colin Faletto github.com/faletto
+// Authors
+// - Colin Faletto github.com/faletto
+
 #include "tasks.h"
 #include "hardware.h"
 

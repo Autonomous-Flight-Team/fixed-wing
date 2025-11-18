@@ -1,4 +1,5 @@
-// READ THE README.md FOR CODE QUALITY STANDARDS
+// Authors
+// - Colin Faletto github.com/faletto
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -7,7 +8,7 @@
 #include "hardware.h"
 
 
-// A mutex is a shared
+
 SemaphoreHandle_t dataMutex;
 
 int STACK_DEPTH = 512;
@@ -38,6 +39,7 @@ typedef struct {
     //TODO
 } ControlOutput_t;
 
+// Program Entry Point
 int main(void) {
     HardwareInit();
     dataMutex = xSemaphoreCreateMutex();

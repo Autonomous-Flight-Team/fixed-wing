@@ -1,4 +1,6 @@
-// Author: Colin Faletto github.com/faletto
+// Authors
+// - Colin Faletto github.com/faletto
+
 #include "tasks.h"
 
 const int MS_PER_TICK = 20; // 50 Hz

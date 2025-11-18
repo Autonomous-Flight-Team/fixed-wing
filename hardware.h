@@ -1,4 +1,6 @@
-// READ THE README.md FOR CODE QUALITY STANDARDS
+// Authors
+// - Colin Faletto github.com/faletto
+
 
 #ifndef HARDWARE_H
 #define HARDWARE_H
