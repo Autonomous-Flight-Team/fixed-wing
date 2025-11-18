@@ -1,3 +1,20 @@
+// Authors:
+//  - Abhinav Goyal github.com/abnvgoyal
+//  - Colin Faletto github.com/faletto
+
+// General UKF info
+
+// State Vector
+//   x, y, z, (position)
+//   u, v, w, (linear x/y/z velocity)
+//   φ, θ, ψ, (roll, pitch, yaw)
+//   p, q, r  (roll rate, pitch rate, yaw rate)
+
+// Measurement Vector
+//   lat, lon, z, gs (latitude & longitude from GPS, altitude from baro, ground speed from GPS)
+//   p, q, r (angular velocity from IMU)
+//   ax, ay, az (linear acceleration from IMU)
+
 #include <iostream>
 #include <random>
 #include <Eigen/Dense>
@@ -114,13 +131,82 @@ Eigen::Matrix<double, dimension, 1> increment_state(Eigen::Matrix<double, dimens
 //Map the predicted state onto measurement space -- i.e, predict what the sensors will output
 Eigen::Matrix<double, measurement_dimension, 1> measurement_function(Eigen::Matrix<double, dimension, 1> past, Eigen::Matrix<double, dimension, 1> current) {
     Eigen::Matrix<double, measurement_dimension, 1> measurement = Eigen::Matrix<double, measurement_dimension, 1>::Zero();
-    //Convert u, v, and w from the body frame to the vehicle 1 frame where they can be used to calculate ground speec (measured by the GPS)
-    Eigen::Matrix<double, 3, 3> rotation_matrix;
-    double phi = current(1, 6);
-    double theta = current(1, 7);
-    rotation_matrix << cos(theta), sin(phi)*sin(theta), cos(phi)*sin(theta), 0, cos(phi), -sin(phi), -sin(theta), cos(theta)*sin(phi),
-                        cos(phi)*cos(theta);
-    Eigen::Matrix<double, 3, 1> ground_speed_vector = 
+
+    // Extract state
+    double x = current(0);
+    double y = current(1);
+    double z = current(2);
+    double u = current(3);
+    double v = current(4);
+    double w = current(5);
+    double phi   = current(6);
+    double theta = current(7);
+    double psi   = current(8);
+    double p = current(9);
+    double q = current(10);
+    double r = current(11);
+
+    // --- Rotation matrices ---
+    Eigen::Matrix3d Rz;
+    Rz << cos(psi), -sin(psi), 0,
+          sin(psi),  cos(psi), 0,
+          0,         0,        1;
+
+    Eigen::Matrix3d Ry;
+    Ry << cos(theta), 0, sin(theta),
+          0,          1, 0,
+         -sin(theta), 0, cos(theta);
+
+    Eigen::Matrix3d Rx;
+    Rx << 1, 0,          0,
+          0, cos(phi),  -sin(phi),
+          0, sin(phi),   cos(phi);
+
+    // World-from-body rotation
+    Eigen::Matrix3d R = Rz * Ry * Rx;
+
+    // Body velocity to world velocity
+    Eigen::Vector3d vel_body(u, v, w);
+    Eigen::Vector3d vel_world = R * vel_body;
+
+    // Predicted GPS groundspeed magnitude
+    double gs = std::sqrt(vel_world(0)*vel_world(0) + vel_world(1)*vel_world(1));
+
+    // Gravity vector in world frame
+    Eigen::Vector3d g_world(0, 0, 9.81);
+    Eigen::Vector3d g_body = R.transpose() * g_world;
+
+    // Recompute body acceleration from state difference
+    Eigen::Matrix<double, dimension, 1> diff = current - past;
+    Eigen::Vector3d acc_body(
+        diff(3),  // du/dt (approx)
+        diff(4),  // dv/dt
+        diff(5)   // dw/dt
+    );
+
+    // Specific force (accelerometer prediction)
+    Eigen::Vector3d acc_meas = acc_body - g_body;
+
+    // Convert x/y in meters to lat/lon using small-angle approx
+    double R_earth = 6378137.0;
+    double lat0 = 37.0 * M_PI / 180.0;
+    double lon0 = -122.0 * M_PI / 180.0;
+
+    double lat = lat0 + y / R_earth;
+    double lon = lon0 + x / (R_earth * std::cos(lat0));
+
+    // Fill measurement vector
+    measurement(0) = lat;     // latitude
+    measurement(1) = lon;     // longitude
+    measurement(2) = z;       // barometer altitude
+    measurement(3) = gs;      // groundspeed
+    measurement(4) = p;       // gyro x
+    measurement(5) = q;       // gyro y
+    measurement(6) = r;       // gyro z
+    measurement(7) = acc_meas(0); // accel x
+    measurement(8) = acc_meas(1); // accel y
+    measurement(9) = acc_meas(2); // accel z
+
     return measurement;
 }
 
@@ -195,7 +281,27 @@ void unscented_kalman_filter(Eigen::Matrix<double, measurement_dimension, 1> mea
     covariance = prior_covariance - kalman_gain * measurement_covariance * kalman_gain.transpose();
 }
 
+Eigen::Matrix<double, dimension, 1>
+estimate_state_with_real_measurements(
+    double lat, double lon, double alt, double gs,
+    double p, double q, double r,
+    double ax, double ay, double az
+) {
+    Eigen::Matrix<double, measurement_dimension, 1> m;
+    m(0) = lat;
+    m(1) = lon;
+    m(2) = alt;
+    m(3) = gs;
+    m(4) = p;
+    m(5) = q;
+    m(6) = r;
+    m(7) = ax;
+    m(8) = ay;
+    m(9) = az;
 
+    unscented_kalman_filter(m);
+    return state_vector;
+}
 
 
 int main() {

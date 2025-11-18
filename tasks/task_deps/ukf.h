@@ -43,4 +43,10 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> unscented_transform(
 
 void unscented_kalman_filter(Eigen::Matrix<double, 10, 1> measurements);
 
+Eigen::Matrix<double, 12, 1> estimate_state_with_real_measurements(
+    double lat, double lon, double alt, double gs,
+    double p, double q, double r,
+    double ax, double ay, double az
+);
+
 #endif // UKF_H
