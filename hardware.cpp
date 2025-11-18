@@ -1,7 +1,8 @@
-// READ THE README.md FOR CODE QUALITY STANDARDS
+// Author: Colin Faletto github.com/faletto
 
 #include "hardware.h"
 
+// Initializes all Hardware
 bool HardwareInit() {
     return ImuInit() && BaroInit() && GPSInit();
 }
@@ -17,6 +18,7 @@ bool ImuInit() {
 
 int BARO_OVERSAMPLING_RATE = 8;
 
+// Initializes the Barometer
 bool BaroInit() {
     if (!bmp.begin_I2C()) return false;
     bmp.setOversampling(BARO_OVERSAMPLING_RATE);
@@ -28,6 +30,7 @@ int GPS_BAUD = 9600;
 
 HardwareSerial gpsSerial(GPS_PORT);
 
+// Initializes the GPS
 bool GPSInit() {
     gpsSerial.begin(GPS_BAUD);
     return true;

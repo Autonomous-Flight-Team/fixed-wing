@@ -1,7 +1,9 @@
+// Author: Colin Faletto github.com/faletto
 #include "tasks.h"
 
 const int MS_PER_TICK = 20; // 50 Hz
 
+// Reads GPS data and puts the data in shared memory
 void GPSTask(void *pvParameters) {
     TickType_t lastWake = xTaskGetTickCount();
     const TickType_t freq = pdMS_TO_TICKS(MS_PER_TICK);
@@ -19,6 +21,7 @@ void GPSTask(void *pvParameters) {
     }
 }
 
+// Reads GPS data and outputs it into a SensorData_t struct
 SensorData_t ReadGPS() {
     SensorData_t data = {0};
     while (gpsSerial.available() > 0) {

@@ -1,3 +1,4 @@
+// Author: Colin Faletto github.com/faletto
 #include "tasks.h"
 #include "hardware.h"
 
@@ -6,12 +7,13 @@ const float SEA_LEVEL_PRESSURE = 1013.25;
 const float KMPH_MPS_CONVERT_RATE = 3.6;
 const int MS_PER_TICK = 5; // 200 Hz
 
+// Gets IMU and Barometer data, 
 void ImuBaroTask(void *pvParameters) {
     TickType_t lastWake = xTaskGetTickCount();
     const TickType_t freq = pdMS_TO_TICKS(MS_PER_TICK);
 
     for (;;) {
-        SensorData_t newData = ReadAllSensors();
+        SensorData_t newData = ReadImuBaro();
         if (xSemaphoreTake(dataMutex, portMAX_DELAY)) {
             sensorData = newData;
             xSemaphoreGive(dataMutex);
@@ -20,12 +22,14 @@ void ImuBaroTask(void *pvParameters) {
     }
 }
 
-SensorData_t ReadAllSensors() {
+// Combines IMU and Barometer data into a single data structure
+SensorData_t ReadImuBaro() {
     SensorData_t data = {0};
-    ReadIMU(&data); ReadBaro(&data); ReadGPS(&data); 
+    ReadIMU(&data); ReadBaro(&data);
     return data;
 }
 
+// Reads data from the IMU
 void ReadIMU(SensorData_t *data) { 
     if (imu.dataReady()) {
         imu.getAGMT();
@@ -38,8 +42,7 @@ void ReadIMU(SensorData_t *data) {
     }
 }
 
-
-
+// Reads data from the barometer
 void ReadBaro(SensorData_t *data) {
     data -> alt = bmp.readAltitude(SEA_LEVEL_PRESSURE);
     data -> pressure = bmp.readPressure();
