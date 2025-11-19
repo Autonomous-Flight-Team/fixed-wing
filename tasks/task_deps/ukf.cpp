@@ -11,7 +11,7 @@
 //   p, q, r  (roll rate, pitch rate, yaw rate)
 
 // Measurement Vector
-//   lat, lon, z, gs (latitude & longitude from GPS, altitude from baro, ground speed from GPS)
+//   lat, lon, alt, gs (latitude & longitude from GPS, altitude from baro, ground speed from GPS)
 //   p, q, r (angular velocity from IMU)
 //   ax, ay, az (linear acceleration from IMU)
 
@@ -232,6 +232,7 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> unscented_transform(std::vector<Eige
             covariance += weights["other_weights"] * diff * diff.transpose() + process_noise;
         }
     }
+    return {mean, covariance};
 }
 
 void unscented_kalman_filter(Eigen::Matrix<double, measurement_dimension, 1> measurements) {
