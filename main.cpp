@@ -36,8 +36,19 @@ typedef struct {
 } SensorData_t;
 
 typedef struct {
+    double x, double y, double z,
+    double u, double v, double w,
+    double phi, double theta, double psi,
+    double p, double q, double r
+} StateVector_t;
+
+typedef struct {
     //TODO
 } ControlOutput_t;
+
+SensorData_t sensorData = {0};
+ControlOutput_t controlOutput = {0};
+StateVector_t stateVector = {0};
 
 // Program Entry Point
 int main(void) {

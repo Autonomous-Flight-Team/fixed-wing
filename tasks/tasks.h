@@ -8,6 +8,7 @@
 
 extern SensorData_t sensorData;
 extern ControlOutput_t controlOutput;
+extern StateVector_t stateVector;
 extern SemaphoreHandle_t dataMutex;
 
 
