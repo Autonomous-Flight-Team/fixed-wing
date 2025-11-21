@@ -36,9 +36,13 @@ typedef struct {
 } SensorData_t;
 
 typedef struct {
+    // Linear Position
     double x, double y, double z,
+    // Linear Velocity
     double u, double v, double w,
+    // Angular Velocity
     double phi, double theta, double psi,
+    // Angular Acceleration
     double p, double q, double r
 } StateVector_t;
 
