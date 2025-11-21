@@ -1,8 +1,8 @@
 #include "tasks.h"
 
-const int MS_PER_TICK = 10; // Replace with (1 / Hz)
+const int MS_PER_TICK = 0 // REPLACE WITH (1 / Hz)
 
-void GSATxTask(void *pvParameters) {
+void ServoTask(void *pvParameters) {
     TickType_t lastWake = xTaskGetTickCount();
     const TickType_t freq = pdMS_TO_TICKS(MS_PER_TICK);
 
@@ -10,4 +10,5 @@ void GSATxTask(void *pvParameters) {
         // DO STUFF HERE
         vTaskDelayUntil(&lastWake, freq);
     }
+
 }
