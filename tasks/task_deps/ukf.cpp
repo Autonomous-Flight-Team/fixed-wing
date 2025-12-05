@@ -2,18 +2,8 @@
 //  - Abhinav Goyal github.com/abnvgoyal
 //  - Colin Faletto github.com/faletto
 
-// General UKF info
-
-// State Vector
-//   x, y, z, (position)
-//   u, v, w, (linear x/y/z velocity)
-//   φ, θ, ψ, (roll, pitch, yaw)
-//   p, q, r  (roll rate, pitch rate, yaw rate)
-
-// Measurement Vector
-//   lat, lon, alt, gs (latitude & longitude from GPS, altitude from baro, ground speed from GPS)
-//   p, q, r (angular velocity from IMU)
-//   ax, ay, az (linear acceleration from IMU)
+// Jupyter Notebook Link:
+// https://nbviewer.org/github/rlabbe/Kalman-and-Bayesian-Filters-in-Python/blob/master/10-Unscented-Kalman-Filter.ipynb
 
 #include <iostream>
 #include <random>
@@ -29,42 +19,71 @@ std::random_device rd;
 
 double x_pos_std_dev = 2.0;
 double x_vel_std_dev = 0.5;
+
+// Initializes random number generator
 std::mt19937 gen(rd());
+
 // Uniform distribution for velocity
 std::uniform_real_distribution<double> distribution(0.0, 1.0);
 
-// mass of drone
+// NOTE: PLACEHOLDER VALUE
 const double mass = 1.0;
 
+double G_EARTH = 9.81;
+double R_EARTH = 6378137.0;
+
+// State Vector contains 12 values
+//   x, y, z, (position)
+//   u, v, w, (linear x/y/z velocity)
+//   φ, θ, ψ, (roll, pitch, yaw)
+//   p, q, r  (roll rate, pitch rate, yaw rate)
 const int dimension = 12;
+
+// Measurement Vector contains 10 values
+//   lat, lon, alt, gs (latitude & longitude from GPS, altitude from baro, ground speed from GPS)
+//   p, q, r (angular velocity from IMU)
+//   ax, ay, az (linear acceleration from IMU)
 const int measurement_dimension = 10;
-// Change state vector to show actual initial state
+
+
 Eigen::Matrix<double, dimension, 1> state_vector = Eigen::Matrix<double, dimension, 1>::Zero();
 Eigen::Matrix<double, dimension, dimension> covariance = Eigen::Matrix<double, dimension, dimension>::Identity(dimension, dimension);
 
+// Generates a random number from a normal / Gaussian distribution with
+// the specified mean value and standard deviation.
+// https://en.wikipedia.org/wiki/Normal_distribution
 double generate_normal_random(double mean, double stddev) {
     std::normal_distribution<double> dist(mean, stddev);
     return dist(gen);
 }
 
-std::vector<double> generate_measurements() {
-    double x_velocity = distribution(gen);
-    x_vel = x_velocity;
-    x_pos += x_velocity;
-    double x_pos_measurement = generate_normal_random(x_pos, x_pos_std_dev);
-    double x_velocity_measurement = generate_normal_random(x_velocity, x_vel_std_dev);
-    return {x_pos_measurement, x_velocity_measurement};
-}
+
+// Generates x velocity and position values with a simulated error from a normal distribution.
+// This method is not currently referenced anywhere.
+// std::vector<double> generate_measurements() {
+//     double x_velocity = distribution(gen);
+//     x_vel = x_velocity;
+//     x_pos += x_velocity;
+//     double x_pos_measurement = generate_normal_random(x_pos, x_pos_std_dev);
+//     double x_velocity_measurement = generate_normal_random(x_velocity, x_vel_std_dev);
+//     return {x_pos_measurement, x_velocity_measurement};
+// }
 
 
-//Generates sigma points for use in UKF off of covariance matrix and values for alpha, beta, and kappa. Generates 25 sigma points as we are using 12 dimensional state vector
-std::vector<Eigen::Matrix<double, dimension, 1>> generate_sigma_points(Eigen::VectorXd mean, Eigen::Matrix<double, dimension, dimension> covariance, double alpha, double beta, double kappa) {
+// Generates sigma points for use in UKF off of covariance matrix and values for alpha, beta, and kappa. 
+// Generates 25 sigma points as we are using a 12-dimensional state vector.
+// Jupyter Notebook - Implementation of the UKF - Sigma Points
+std::vector<Eigen::Matrix<double, dimension, 1>> generate_sigma_points(Eigen::VectorXd mean, 
+    Eigen::Matrix<double, dimension, dimension> covariance, double alpha, double beta, 
+    double kappa) {
+
     int n = covariance.rows();
     double lambda = alpha * alpha * (n + kappa) - n;
     std::vector<Eigen::Matrix<double, dimension, 1>> sigma_points;
     sigma_points.push_back(mean);
 
-    Eigen::Matrix<double, dimension, dimension> L = covariance.llt().matrixL(); // Lower triangular matrix
+    Eigen::Matrix<double, dimension, dimension> L = 
+    covariance.llt().matrixL(); // Lower triangular matrix
     Eigen::Matrix<double, dimension, dimension> displacement = L * std::sqrt(n + lambda);
 
     for (int i = 0; i < n; i++) {
@@ -74,7 +93,8 @@ std::vector<Eigen::Matrix<double, dimension, 1>> generate_sigma_points(Eigen::Ve
     return sigma_points;
 }
 
-//Goes along with sigma points
+// Computes weights for the sigma points.
+// Jupyter Notebook - Implementation of the UKF - Weights
 std::map<std::string, double> compute_weights(int n, double alpha, double beta, double kappa) {
     double lambda = alpha * alpha * (n + kappa) - n;
     std::map<std::string, double> weights;
@@ -87,8 +107,39 @@ std::map<std::string, double> compute_weights(int n, double alpha, double beta, 
     return weights;
 }
 
-//Predict what the next state will be based off current state and current inputs
-Eigen::Matrix<double, dimension, 1> increment_state(Eigen::Matrix<double, dimension, 1> current, double dt, Eigen::Matrix3d J, double mass, Eigen::Vector3d moment_inputs, Eigen::Vector3d force_inputs) {
+
+
+// Predict what the next state will be using the RK4 algorithm.
+// https://lpsa.swarthmore.edu/NumInt/NumIntFourth.html
+// Parameters:
+//  current - The current state vector
+//  h - The step size for RK4
+//  J - Inertia matrix, can be calculated with the aircraft CAD
+//  mass - mass of aircraft
+//  moment_inputs - externally applied moments to aircraft
+//  force_inputs - externally applied forces to aircraft
+Eigen::Matrix<double, dimension, 1> increment_state(Eigen::Matrix<double, dimension, 1> current, double h, Eigen::Matrix3d J, double mass, Eigen::Vector3d moment_inputs, Eigen::Vector3d force_inputs) {
+
+    Eigen::Matrix<double, dimension, 1> k1 = derivative_function(current, J, mass, moment_inputs, force_inputs);
+    Eigen::Matrix<double, dimension, 1> k2 = derivative_function(current + k1 * h/2, J, mass, moment_inputs, force_inputs);
+    Eigen::Matrix<double, dimension, 1> k3 = derivative_function(current + k2 * h/2, J, mass, moment_inputs, force_inputs);
+    Eigen::Matrix<double, dimension, 1> k4 = derivative_function(current + k3 * h, J, mass, moment_inputs, force_inputs);
+    
+    Eigen::Matrix<double, dimension, 1> incremented = current + ( h / (6.0) * (k1 + 2 * k2 + 2 * k3 + k4));
+
+    return incremented;
+}
+
+// Returns a vector with the rates of change of every value in the state vector according to the kinematic model.
+// https://drive.google.com/file/d/1BOwGqoJ2WjiIUYDA8p77TGwV-Ttrd4hc/view - Slide 15
+// Parameters:
+//  current - The current state vector
+//  J - Inertia matrix, can be calculated with the aircraft CAD
+//  mass - mass of aircraft
+//  moment_inputs - externally applied moments to aircraft
+//  force_inputs - externally applied forces to aircraft
+Eigen::Matrix<double, dimension, 1> derivative_function(Eigen::Matrix current, Eigen::Matrix3d J, double mass, Eigen::Vector3d moment_inputs, Eigen::Vector3d force_inputs) {
+
     Eigen::Vector3d angular_vel_old = current.tail<3>();
     Eigen::Vector3d angular_acc = J.inverse() * ((-angular_vel_old).cross(J * angular_vel_old) + moment_inputs);
 
@@ -123,16 +174,15 @@ Eigen::Matrix<double, dimension, 1> increment_state(Eigen::Matrix<double, dimens
     derivative.segment<3>(3) = translation_acc; 
     derivative.segment<3>(6) = angular_vel;
     derivative.segment<3>(9) = angular_acc;
-    Eigen::Matrix<double, dimension, 1> incremented = current + (derivative * dt);
 
-    return incremented;
+    return derivative;
 }
 
-//Map the predicted state onto measurement space -- i.e, predict what the sensors will output
+// Maps the predicted state onto measurement space -- i.e. predict what the sensors will output
 Eigen::Matrix<double, measurement_dimension, 1> measurement_function(Eigen::Matrix<double, dimension, 1> past, Eigen::Matrix<double, dimension, 1> current) {
     Eigen::Matrix<double, measurement_dimension, 1> measurement = Eigen::Matrix<double, measurement_dimension, 1>::Zero();
 
-    // Extract state
+    // Extract state from current state vector
     double x = current(0);
     double y = current(1);
     double z = current(2);
@@ -146,34 +196,41 @@ Eigen::Matrix<double, measurement_dimension, 1> measurement_function(Eigen::Matr
     double q = current(10);
     double r = current(11);
 
-    // --- Rotation matrices ---
+    // --- Converts pitch / roll / yaw into rotation matrices ---
+    // https://msl.cs.uiuc.edu/planning/node102.html
+
+    // Yaw
     Eigen::Matrix3d Rz;
     Rz << cos(psi), -sin(psi), 0,
           sin(psi),  cos(psi), 0,
           0,         0,        1;
 
+    // Pitch
     Eigen::Matrix3d Ry;
     Ry << cos(theta), 0, sin(theta),
           0,          1, 0,
          -sin(theta), 0, cos(theta);
 
+    // Roll
     Eigen::Matrix3d Rx;
     Rx << 1, 0,          0,
           0, cos(phi),  -sin(phi),
           0, sin(phi),   cos(phi);
 
     // World-from-body rotation
+    // Rotation follows yaw-pitch-roll (Tait-Bryan angle) order
+    //https://en.wikipedia.org/wiki/Euler_angles#Chained_rotations_equivalence
     Eigen::Matrix3d R = Rz * Ry * Rx;
 
-    // Body velocity to world velocity
+    // Converts body velocity to world velocity
     Eigen::Vector3d vel_body(u, v, w);
     Eigen::Vector3d vel_world = R * vel_body;
 
-    // Predicted GPS groundspeed magnitude
-    double gs = std::sqrt(vel_world(0)*vel_world(0) + vel_world(1)*vel_world(1));
+    // Predicts GPS groundspeed magnitude using Pythagorean theorem
+    double gs = std::sqrt(vel_world(0) * vel_world(0) + vel_world(1) * vel_world(1));
 
     // Gravity vector in world frame
-    Eigen::Vector3d g_world(0, 0, 9.81);
+    Eigen::Vector3d g_world(0, 0, G_EARTH);
     Eigen::Vector3d g_body = R.transpose() * g_world;
 
     // Recompute body acceleration from state difference
@@ -188,12 +245,10 @@ Eigen::Matrix<double, measurement_dimension, 1> measurement_function(Eigen::Matr
     Eigen::Vector3d acc_meas = acc_body - g_body;
 
     // Convert x/y in meters to lat/lon using small-angle approx
-    double R_earth = 6378137.0;
     double lat0 = 37.0 * M_PI / 180.0;
     double lon0 = -122.0 * M_PI / 180.0;
-
-    double lat = lat0 + y / R_earth;
-    double lon = lon0 + x / (R_earth * std::cos(lat0));
+    double lat = lat0 + y / R_EARTH;
+    double lon = lon0 + x / (R_EARTH * std::cos(lat0));
 
     // Fill measurement vector
     measurement(0) = lat;     // latitude
@@ -210,6 +265,9 @@ Eigen::Matrix<double, measurement_dimension, 1> measurement_function(Eigen::Matr
     return measurement;
 }
 
+
+// Finds the mean and covariance for the sigma points.
+// Jupyter Notebook - The Unscented Transform
 std::pair<Eigen::VectorXd, Eigen::MatrixXd> unscented_transform(std::vector<Eigen::VectorXd> sigma_points, std::map<std::string, double> weights, Eigen::MatrixXd process_noise) {
     Eigen::VectorXd mean = Eigen::VectorXd::Zero(sigma_points[0].size());
     Eigen::MatrixXd covariance = Eigen::MatrixXd::Zero(sigma_points[0].size(), sigma_points[0].size());
@@ -235,6 +293,8 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> unscented_transform(std::vector<Eige
     return {mean, covariance};
 }
 
+// Implements the UKF to predict the next state vector.
+// Jupyter Notebook - Impementation of the UKF
 void unscented_kalman_filter(Eigen::Matrix<double, measurement_dimension, 1> measurements) {
     double alpha = 0.1;
     double beta = 2.0;
@@ -242,30 +302,37 @@ void unscented_kalman_filter(Eigen::Matrix<double, measurement_dimension, 1> mea
     std::vector<Eigen::Matrix<double, dimension, 1>> sigma_points = generate_sigma_points(state_vector, covariance, alpha, beta, kappa);
     std::map<std::string, double> weights = compute_weights(dimension, alpha, beta, kappa);
 
+    // NOTE: PLACEHOLDER VALUES
     Eigen::Matrix3d J = Eigen::Matrix3d::Identity();
-    
     Eigen::Vector3d moment_inputs = Eigen::Vector3d::Zero();
     Eigen::Vector3d force_inputs = Eigen::Vector3d::Zero();
-    std::vector<Eigen::VectorXd> incremented;
 
+
+    
+    // NOTE: PLACEHOLDER VALUE
     Eigen::Matrix<double, dimension, dimension> process_noise = Eigen::Matrix<double, dimension, dimension>::Zero();
+    
     
     Eigen::Matrix<double, dimension, 1> prior_mean = Eigen::Matrix<double, dimension, 1>::Zero();
     Eigen::Matrix<double, dimension, dimension> prior_covariance = Eigen::Matrix<double, dimension, dimension>::Zero();
     
-    // Projecting sigma points forward in time
+    // Projects sigma points forward in time
+    std::vector<Eigen::VectorXd> incremented;
     for(int i = 0; i < sigma_points.size(); i++) {
         incremented.push_back(increment_state(sigma_points[i], 0.1, J, mass, moment_inputs, force_inputs));
     }
-
     auto [prior_mean, prior_covariance] = unscented_transform(incremented, weights, process_noise);
 
+    // Projects predicted measurements forward in time
     std::vector<Eigen::VectorXd> measurement_predictions;
     for(int i = 0; i < sigma_points.size(); i++) {
         measurement_predictions.push_back(measurement_function(sigma_points[i], incremented[i]));
     }
     auto [measurement_mean, measurement_covariance] = unscented_transform(measurement_predictions, weights, process_noise);
+
     auto residual = measurements - measurement_mean;
+
+    // Calculates cross covariance of sigma points
     auto cross_covariance = Eigen::MatrixXd::Zero(dimension, measurement_dimension);
     for(int i = 0; i < sigma_points.size(); i++) {
         Eigen::Matrix<double, dimension, 1> diff = incremented[i] - prior_mean;
@@ -280,28 +347,6 @@ void unscented_kalman_filter(Eigen::Matrix<double, measurement_dimension, 1> mea
     auto kalman_gain = cross_covariance * measurement_covariance.inverse();
     state_vector =  prior_mean + kalman_gain * residual;
     covariance = prior_covariance - kalman_gain * measurement_covariance * kalman_gain.transpose();
-}
-
-Eigen::Matrix<double, dimension, 1>
-estimate_state_with_real_measurements(
-    double lat, double lon, double alt, double gs,
-    double p, double q, double r,
-    double ax, double ay, double az
-) {
-    Eigen::Matrix<double, measurement_dimension, 1> m;
-    m(0) = lat;
-    m(1) = lon;
-    m(2) = alt;
-    m(3) = gs;
-    m(4) = p;
-    m(5) = q;
-    m(6) = r;
-    m(7) = ax;
-    m(8) = ay;
-    m(9) = az;
-
-    unscented_kalman_filter(m);
-    return state_vector;
 }
 
 
