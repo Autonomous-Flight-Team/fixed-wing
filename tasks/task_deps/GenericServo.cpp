@@ -1,4 +1,4 @@
-// Author: https://github.com/maximamolchanov
+// Author: https://github.com/maximamolchanov  
 #include "GenericServo.h"
 
 // Constructor that sets up the initial servo configuration and constrains
@@ -92,3 +92,4 @@ void GenericServo::changeAngleLimits(int newMinAngle, int newMaxAngle) {
 void GenericServo::setInverted(bool newState) {
     inverted = newState;
 }
+
