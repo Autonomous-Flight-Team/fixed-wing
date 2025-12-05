@@ -17,7 +17,6 @@ void ImuBaroTask(void *pvParameters);
 void GPSTask(void *pvParameters);
 void StateTask(void *pvParameters);
 void PIDTask(void *pvParameters);
-void DSHOTTask(void *pvParameters);
 void GSATxTask(void *pvParameters);
 void GSARxTask(void *pvParameters);
 

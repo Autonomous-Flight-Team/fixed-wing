@@ -14,6 +14,9 @@ SemaphoreHandle_t dataMutex;
 int STACK_DEPTH = 512;
 int[] priority = {1,2,3,4};
 
+// TODO: Do we need an emergency landing mode?
+typedef enum { MANUAL, AUTO } DroneMode;
+
 typedef struct {
     // IMU
         // Linear Acceleration
@@ -54,6 +57,7 @@ typedef struct {
 SensorData_t sensorData = {0};
 ControlOutput_t controlOutput = {0};
 StateVector_t stateVector = {0};
+DroneMode mode = MANUAL;
 
 // Program Entry Point
 int main(void) {
@@ -72,8 +76,6 @@ int main(void) {
     xTaskCreate(GPSTask, "GPS", STACK_DEPTH, NULL, *priority + 2, NULL);
     xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, *priority, NULL);
     xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);
-    xTaskCreate(ServoTask, "Servo", STACK_DEPTH, NULL, *priority, NULL);
-    xTaskCreate(MotorTask, "Motor", STACK_DEPTH, NULL, *priority, NULL);
     xTaskCreate(GSARxTask, "GSARx", STACK_DEPTH, NULL, *priority+3, NULL);
     xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority+3, NULL);
 
