@@ -1,58 +1,23 @@
+
+
 // Authors
 // - Colin Faletto github.com/faletto
 
-#include "FreeRTOS.h"
-#include "task.h"
-#include "semphr.h"
-#include "tasks/tasks.h"
+
+
+#include "tasks.h"
 #include "hardware.h"
-
-
+#include "structs.h"
+#include <arduino_freertos.h>
+#include <semphr.h>
+#include <task.h>
 
 SemaphoreHandle_t dataMutex;
 
+
 int STACK_DEPTH = 512;
-int[] priority = {1,2,3,4};
+int priority[] = {1,2,3,4};
 
-// TODO: Do we need an emergency landing mode?
-typedef enum { MANUAL, AUTO } DroneMode;
-
-typedef struct {
-    // IMU
-        // Linear Acceleration
-        float ax, ay, az;
-        // Rotational Velocity
-        float gx, gy, gz;
-    // Barometer
-        float altitude;
-        float pressure;
-        float temp;
-    // GPS
-        // Latitude
-        double lat;
-        // Longitude
-        double lon;
-        float gps_altitude;
-        // Linear Velocity
-        float vs; 
-
-        // Sensor Data Size:
-} SensorData_t;
-
-typedef struct {
-    // Linear Position
-    double x, double y, double z,
-    // Linear Velocity
-    double u, double v, double w,
-    // Angular Velocity
-    double phi, double theta, double psi,
-    // Angular Acceleration
-    double p, double q, double r
-} StateVector_t;
-
-typedef struct {
-    //TODO
-} ControlOutput_t;
 
 SensorData_t sensorData = {0};
 ControlOutput_t controlOutput = {0};
@@ -61,6 +26,9 @@ DroneMode mode = MANUAL;
 
 // Program Entry Point
 int main(void) {
+    pinMode(arduino::LED_BUILTIN, arduino::OUTPUT);
+    digitalWrite(arduino::LED_BUILTIN, arduino::HIGH);
+
     HardwareInit();
     dataMutex = xSemaphoreCreateMutex();
     

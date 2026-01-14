@@ -1,10 +1,16 @@
 #ifndef TASKS_H
 #define TASKS_H
 
-#include "FreeRTOS.h"
-#include "task.h"
-#include "semphr.h"
 
+
+
+#include "structs.h"
+// #include "libraries/freertos-teensy/src/arduino_freertos.h"
+// #include "libraries/freertos-teensy/src/task.h"
+// #include "libraries/freertos-teensy/src/semphr.h"
+#include <arduino_freertos.h>
+#include <semphr.h>
+#include <task.h>
 
 extern SensorData_t sensorData;
 extern ControlOutput_t controlOutput;

@@ -5,8 +5,8 @@
 #ifndef HARDWARE_H
 #define HARDWARE_H
 
-#include "FreeRTOS.h"
-#include "tasks/tasks.h"
+
+#include "tasks.h"
 
 // Dependant on final hardware
 #include <ICM_20948.h>
@@ -14,13 +14,13 @@
 #include <HardwareSerial.h>
 #include <TinyGPS++.h>
 
-void HardwareInit(void);
+bool HardwareInit(void);
 
-ICM_20948_I2C imu;
-Adafruit_BMP3XX bmp;
-TinyGPSPlus gps;
+extern ICM_20948_I2C imu;
+extern Adafruit_BMP3XX bmp;
+extern TinyGPSPlus gps;
 
-HardwareSerial gpsSerial;
+#define gpsSerial Serial1
 
 
 #endif
