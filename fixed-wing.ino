@@ -1,12 +1,4 @@
 // DO NOT DELETE THIS FILE
-
-// void setup() {
-//   pinMode(LED_BUILTIN, OUTPUT);
-// }
-
-// void loop() {
-//   digitalWrite(LED_BUILTIN, HIGH);
-//   delay(500);
-//   digitalWrite(LED_BUILTIN, LOW);
-//   delay(500);
-// }
+// This file is useless
+// Despite this, if you delete it, arduino IDE will delete the entire project folder
+// Learned this lesson the hard way
