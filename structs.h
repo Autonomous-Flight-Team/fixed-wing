@@ -43,6 +43,9 @@ typedef struct {
     //TODO
 } ControlOutput_t;
 
+typedef struct {
+    bool on;
+} BlinkState_t;
 
 
 #endif

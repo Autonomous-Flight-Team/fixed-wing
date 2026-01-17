@@ -16,6 +16,7 @@ extern SensorData_t sensorData;
 extern ControlOutput_t controlOutput;
 extern StateVector_t stateVector;
 extern SemaphoreHandle_t dataMutex;
+extern BlinkState_t blinkState;
 
 
 // Task Declarations
@@ -25,5 +26,6 @@ void StateTask(void *pvParameters);
 void PIDTask(void *pvParameters);
 void GSATxTask(void *pvParameters);
 void GSARxTask(void *pvParameters);
+void BlinkTask(void *pvParameters);
 
 #endif
