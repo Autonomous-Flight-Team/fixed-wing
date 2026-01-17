@@ -1,5 +1,11 @@
 # ✈️ Fixed Wing Code
-## Code Quality Guide
+
+## 💻 Installation Instructions
+1. Install the [PlatformIO IDE](https://marketplace.visualstudio.com/items?itemName=platformio.platformio-ide) extension in VSCode. It may take several minutes to install.
+2. Clone the repository and open it in VSCode.
+3. Wait for PlatformIO to initialize. Once it has initialized, run `PlatformIO: Upload` from the command palette
+
+## 🌐 Code Quality Guide
 Rules:
 1. No magic numbers -> Name all variables.
 2. Minimum variable and function name size is 5 characters.
