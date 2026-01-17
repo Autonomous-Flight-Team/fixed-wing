@@ -3,7 +3,7 @@
 ## 💻 Installation Instructions
 1. Install the [PlatformIO IDE](https://marketplace.visualstudio.com/items?itemName=platformio.platformio-ide) extension in VSCode. It may take several minutes to install.
 2. Clone the repository and open it in VSCode.
-3. Wait for PlatformIO to initialize. Once it has initialized, run `PlatformIO: Upload` from the command palette
+3. Wait for PlatformIO to initialize. Once it has initialized, run `PlatformIO: Upload` from the command palette.
 
 ## 🌐 Code Quality Guide
 Rules:
