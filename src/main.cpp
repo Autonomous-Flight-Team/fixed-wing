@@ -28,7 +28,7 @@ DroneMode mode = MANUAL;
 
 // Program Entry Point
 
-int main(void) {
+void setup() {
     Serial.begin(115200);
     pinMode(arduino::LED_BUILTIN, arduino::OUTPUT);
     // digitalWrite(arduino::LED_BUILTIN, arduino::HIGH);
@@ -54,9 +54,9 @@ int main(void) {
 
     vTaskStartScheduler();
 
-    return 0;
-
 }
+
+void loop() {}
 
 
 

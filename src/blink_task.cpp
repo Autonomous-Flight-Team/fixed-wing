@@ -1,6 +1,6 @@
 #include "tasks.h"
 
-int MS_PER_TICK = 500;
+int MS_PER_TICK = 1000;
 
 void BlinkTask(void *pvParameters) {
   for (;;) {
