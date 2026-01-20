@@ -5,6 +5,13 @@
 2. Clone the repository and open it in VSCode.
 3. Wait for PlatformIO to initialize. Once it has initialized, run `PlatformIO: Upload` from the command palette.
 
+## 🪾 Commit Guide
+1. For each new feature you develop, checkout a new branch from the `testing` branch.
+2. When the feature is complete, create a PR and merge your branch into `testing`. Build from the `testing` branch onto the teensy to ensure the code compiles and works as intended.
+3. When the `testing` branch is in working order, create a PR to merge `testing` into `main`. You will require another person to review this code and approve it for production code.
+
+![Commit Diagram](media/commit_diagram.png)
+
 ## 🌐 Code Quality Guide
 Rules:
 1. No magic numbers -> Name all variables.
