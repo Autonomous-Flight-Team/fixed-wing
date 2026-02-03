@@ -7,7 +7,7 @@
 
 #include "tasks.h"
 #include "hardware.h"
-#include "structs.h"
+#include "types.h"
 #include <arduino_freertos.h>
 #include <semphr.h>
 #include <task.h>
@@ -65,5 +65,4 @@ void setup() {
 }
 
 void loop() {}
-
 

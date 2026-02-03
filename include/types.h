@@ -1,8 +1,20 @@
-#ifndef STRUCTS_H
-#define STRUCTS_H
+#ifndef TYPES_H
+#define TYPES_H
+
+#include <mavlink/v2.0/common/mavlink.h>
 
 // TODO: Do we need an emergency landing mode?
 typedef enum { MANUAL, AUTO } DroneMode;
+
+typedef enum {
+    LINK_900MHZ = 0,
+    LINK_24GHZ  = 1
+} MavlinkLink_t;
+
+typedef struct {
+    MavlinkLink_t link;
+    mavlink_message_t msg;
+} MavlinkRxPacket_t;
 
 
 typedef struct {
