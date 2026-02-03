@@ -35,6 +35,8 @@ void PIDTask(void *pvParameters);
 void GSATxTask(void *pvParameters);
 void GSARxTask(void *pvParameters);
 void BlinkTask(void *pvParameters);
+
+// Mavlink Tasks
 void MavlinkRx900Task(void *pvParameters);
 void MavlinkRx24Task(void *pvParameters);
 void MavlinkControlDispatchTask(void *pvParameters);

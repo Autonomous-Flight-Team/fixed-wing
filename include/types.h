@@ -10,6 +10,7 @@
 // TODO: Do we need an emergency landing mode?
 typedef enum { MANUAL, AUTO } DroneMode;
 
+// Mavlink relevant types
 typedef enum {
     LINK_900MHZ = 0,
     LINK_24GHZ  = 1
