@@ -14,7 +14,7 @@
 #include <task.h>
 
 extern "C" {
-#include "../mavlink/generated/include/mavlink/v2.0/common/mavlink.h"
+#include <mavlink/v2.0/common/mavlink.h>
 }
 
 extern SensorData_t sensorData;
