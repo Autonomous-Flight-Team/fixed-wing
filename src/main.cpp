@@ -7,7 +7,7 @@
 
 #include "tasks.h"
 #include "hardware.h"
-#include "structs.h"
+#include "types.h"
 #include <arduino_freertos.h>
 #include <semphr.h>
 #include <task.h>
@@ -35,6 +35,10 @@ void setup() {
 
     HardwareInit();
     dataMutex = xSemaphoreCreateMutex();
+
+    // MAVLink RX queues (ensure Serial2/Serial3 are initialized in HardwareInit).
+    mavlinkRxQueue900 = xQueueCreate(16, sizeof(MavlinkRxPacket_t));
+    mavlinkRxQueue24  = xQueueCreate(16, sizeof(MavlinkRxPacket_t));
     
 
     // xTaskCreate Paramenters:
@@ -51,13 +55,14 @@ void setup() {
     // xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);
     // xTaskCreate(GSARxTask, "GSARx", STACK_DEPTH, NULL, *priority+3, NULL);
     // xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority+3, NULL);
+    xTaskCreate(MavlinkRx900Task, "Rx900", STACK_DEPTH, NULL, *priority + 3, NULL);
+    xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
+    xTaskCreate(MavlinkControlDispatchTask, "CtlDisp", STACK_DEPTH, NULL, *priority + 4, NULL);
+    xTaskCreate(MavlinkTelemetryDispatchTask, "TelDisp", STACK_DEPTH, NULL, *priority + 1, NULL);
 
     vTaskStartScheduler();
 
 }
 
 void loop() {}
-
-
-
 
