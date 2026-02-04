@@ -1,11 +1,8 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-#if __has_include(<mavlink/v2.0/common/mavlink.h>)
-#include <mavlink/v2.0/common/mavlink.h>
-#else
-#include "../lib/mavlink/generated/include/mavlink/v2.0/common/mavlink.h"
-#endif
+
+#include <MAVLink.h>
 
 // TODO: Do we need an emergency landing mode?
 typedef enum { MANUAL, AUTO } DroneMode;
