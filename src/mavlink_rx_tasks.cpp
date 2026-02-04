@@ -1,5 +1,5 @@
 /*
-Advik Sharma - vibe-coded but works well
+Advik Sharma - github.com/jpyces
 */
 
 #include "tasks.h"
@@ -11,7 +11,7 @@ Advik Sharma - vibe-coded but works well
 #define MAVLINK_COMM_900 MAVLINK_COMM_0
 #define MAVLINK_COMM_24  MAVLINK_COMM_1
 
-// TODO: Update these UARTs to match your wiring.
+// TODO: Update these UARTs to match our wiring
 #define MAVLINK_SERIAL_900 Serial2
 #define MAVLINK_SERIAL_24  Serial3
 
@@ -22,9 +22,12 @@ volatile uint32_t mavlinkRxDrop24  = 0;
 volatile mavlink_message_t mavlinkLastTelemetry = {};
 volatile uint32_t mavlinkTelemetryCount = 0;
 
+const int SLOW_MS_PER_TICK = 2; // 500 Hz poll
+const int FAST_MS_PER_TICK = 1; // 1000 Hz poll
+
 void MavlinkRx900Task(void *pvParameters) {
     TickType_t lastWake = xTaskGetTickCount();
-    const TickType_t freq = pdMS_TO_TICKS(2); // 500 Hz poll
+    const TickType_t freq = pdMS_TO_TICKS(SLOW_MS_PER_TICK); 
     mavlink_message_t msg;
     mavlink_status_t status;
 
@@ -46,7 +49,7 @@ void MavlinkRx900Task(void *pvParameters) {
 
 void MavlinkRx24Task(void *pvParameters) {
     TickType_t lastWake = xTaskGetTickCount();
-    const TickType_t freq = pdMS_TO_TICKS(2); // 500 Hz poll
+    const TickType_t freq = pdMS_TO_TICKS(SLOW_MS_PER_TICK);
     mavlink_message_t msg;
     mavlink_status_t status;
 
@@ -69,7 +72,7 @@ void MavlinkRx24Task(void *pvParameters) {
 void MavlinkControlDispatchTask(void *pvParameters) {
     MavlinkRxPacket_t pkt;
     for (;;) {
-        if (xQueueReceive(mavlinkRxQueue900, &pkt, pdMS_TO_TICKS(2)) == pdTRUE) {
+        if (xQueueReceive(mavlinkRxQueue900, &pkt, pdMS_TO_TICKS(SLOW_MS_PER_TICK)) == pdTRUE) {
             switch (pkt.msg.msgid) {
                 case MAVLINK_MSG_ID_MANUAL_CONTROL: {
                     mavlink_manual_control_t mc;
@@ -81,19 +84,19 @@ void MavlinkControlDispatchTask(void *pvParameters) {
                     break;
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(1));
+        vTaskDelay(pdMS_TO_TICKS(FAST_MS_PER_TICK));
     }
 }
 
 void MavlinkTelemetryDispatchTask(void *pvParameters) {
     MavlinkRxPacket_t pkt;
     for (;;) {
-        if (xQueueReceive(mavlinkRxQueue24, &pkt, pdMS_TO_TICKS(2)) == pdTRUE) {
+        if (xQueueReceive(mavlinkRxQueue24, &pkt, pdMS_TO_TICKS(SLOW_MS_PER_TICK)) == pdTRUE) {
             // Store last raw telemetry message for flexible handling.
             mavlinkLastTelemetry = pkt.msg;
             ++mavlinkTelemetryCount;
         }
 
-        vTaskDelay(pdMS_TO_TICKS(1));
+        vTaskDelay(pdMS_TO_TICKS(FAST_MS_PER_TICK));
     }
 }
