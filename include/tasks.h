@@ -1,9 +1,6 @@
 #ifndef TASKS_H
 #define TASKS_H
 
-
-
-
 #include "types.h"
 // #include "libraries/freertos-teensy/src/arduino_freertos.h"
 // #include "libraries/freertos-teensy/src/task.h"

@@ -57,8 +57,6 @@ void setup() {
     // xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority+3, NULL);
     xTaskCreate(MavlinkRx900Task, "Rx900", STACK_DEPTH, NULL, *priority + 3, NULL);
     xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
-    xTaskCreate(MavlinkControlDispatchTask, "CtlDisp", STACK_DEPTH, NULL, *priority + 4, NULL);
-    xTaskCreate(MavlinkTelemetryDispatchTask, "TelDisp", STACK_DEPTH, NULL, *priority + 1, NULL);
 
     vTaskStartScheduler();
 

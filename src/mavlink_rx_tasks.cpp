@@ -15,6 +15,7 @@ Advik Sharma - github.com/jpyces
 #define MAVLINK_SERIAL_900 Serial2
 #define MAVLINK_SERIAL_24  Serial3
 
+// Shared RX queues and telemetry state, defined here and exposed via tasks.h.
 QueueHandle_t mavlinkRxQueue900 = nullptr;
 QueueHandle_t mavlinkRxQueue24  = nullptr;
 volatile uint32_t mavlinkRxDrop900 = 0;
@@ -22,9 +23,12 @@ volatile uint32_t mavlinkRxDrop24  = 0;
 volatile mavlink_message_t mavlinkLastTelemetry = {};
 volatile uint32_t mavlinkTelemetryCount = 0;
 
+// RX loops are paced to avoid starving other tasks; dispatch is slightly faster.
 const int SLOW_MS_PER_TICK = 2; // 500 Hz poll
 const int FAST_MS_PER_TICK = 1; // 1000 Hz poll
 
+// Purpose: Parse MAVLink from the 900 MHz UART and enqueue full messages.
+// Structure: Tight read/parse loop + periodic delay to bound CPU usage.
 void MavlinkRx900Task(void *pvParameters) {
     TickType_t lastWake = xTaskGetTickCount();
     const TickType_t freq = pdMS_TO_TICKS(SLOW_MS_PER_TICK); 
@@ -47,6 +51,8 @@ void MavlinkRx900Task(void *pvParameters) {
     }
 }
 
+// Purpose: Parse MAVLink from the 2.4 GHz UART and enqueue full messages.
+// Structure: Mirrors 900 MHz RX to keep link handling symmetric.
 void MavlinkRx24Task(void *pvParameters) {
     TickType_t lastWake = xTaskGetTickCount();
     const TickType_t freq = pdMS_TO_TICKS(SLOW_MS_PER_TICK);
@@ -69,34 +75,3 @@ void MavlinkRx24Task(void *pvParameters) {
     }
 }
 
-void MavlinkControlDispatchTask(void *pvParameters) {
-    MavlinkRxPacket_t pkt;
-    for (;;) {
-        if (xQueueReceive(mavlinkRxQueue900, &pkt, pdMS_TO_TICKS(SLOW_MS_PER_TICK)) == pdTRUE) {
-            switch (pkt.msg.msgid) {
-                case MAVLINK_MSG_ID_MANUAL_CONTROL: {
-                    mavlink_manual_control_t mc;
-                    mavlink_msg_manual_control_decode(&pkt.msg, &mc);
-                    // TODO: Apply manual control input.
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-        vTaskDelay(pdMS_TO_TICKS(FAST_MS_PER_TICK));
-    }
-}
-
-void MavlinkTelemetryDispatchTask(void *pvParameters) {
-    MavlinkRxPacket_t pkt;
-    for (;;) {
-        if (xQueueReceive(mavlinkRxQueue24, &pkt, pdMS_TO_TICKS(SLOW_MS_PER_TICK)) == pdTRUE) {
-            // Store last raw telemetry message for flexible handling.
-            mavlinkLastTelemetry = pkt.msg;
-            ++mavlinkTelemetryCount;
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(FAST_MS_PER_TICK));
-    }
-}

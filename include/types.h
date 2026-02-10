@@ -1,11 +1,21 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-
 #include <MAVLink.h>
 
 // TODO: Do we need an emergency landing mode?
-typedef enum { MANUAL, AUTO } DroneMode;
+typedef enum { 
+    MANUAL = 0,
+    MISSION_ABORT = 1,  // Communication failure fail-safe - need landing sequence
+
+    // Autonomous Modes
+    FULL_AUTONOMOUS = 2, // Future complete autonomous mode
+    
+    AUTO_CRUISE = 3,  // Specifying Autonomous modes will make mission profile easier to encapsulate
+    AUTO_LAND = 4, // Future self-landing mechanism beyond MISSION_ABORT
+    AUTO_TAKEOFF = 5,  // Future self-takeoff mode
+    
+} DroneMode;
 
 // Mavlink relevant types
 typedef enum {
