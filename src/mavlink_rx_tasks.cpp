@@ -58,7 +58,7 @@ void MavlinkRx24Task(void *pvParameters) {
     const TickType_t freq = pdMS_TO_TICKS(SLOW_MS_PER_TICK);
     mavlink_message_t msg;
     mavlink_status_t status;
-
+    
     for (;;) {
         while (MAVLINK_SERIAL_24.available() > 0) {
             uint8_t c = static_cast<uint8_t>(MAVLINK_SERIAL_24.read());
@@ -75,3 +75,39 @@ void MavlinkRx24Task(void *pvParameters) {
     }
 }
 
+/* Purpose: Consume control messages from the 900 MHz queue and act on them.
+// Structure: Queue receive + switch on msgid for extensible handling.
+void MavlinkControlDispatchTask(void *pvParameters) {
+    MavlinkRxPacket_t pkt;
+    for (;;) {
+        if (xQueueReceive(mavlinkRxQueue900, &pkt, pdMS_TO_TICKS(SLOW_MS_PER_TICK)) == pdTRUE) {
+            switch (pkt.msg.msgid) {
+                case MAVLINK_MSG_ID_MANUAL_CONTROL: {
+                    mavlink_manual_control_t mc;
+                    mavlink_msg_manual_control_decode(&pkt.msg, &mc);
+                    // TODO: Apply manual control input.
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(FAST_MS_PER_TICK));
+    }
+}
+
+// Purpose: Consume telemetry from the 2.4 GHz queue and record latest state.
+// Structure: Queue receive + lightweight storage for downstream consumers.
+void MavlinkTelemetryDispatchTask(void *pvParameters) {
+    MavlinkRxPacket_t pkt;
+    for (;;) {
+        if (xQueueReceive(mavlinkRxQueue24, &pkt, pdMS_TO_TICKS(SLOW_MS_PER_TICK)) == pdTRUE) {
+            // Store last raw telemetry message for flexible handling.
+            mavlinkLastTelemetry = pkt.msg;
+            ++mavlinkTelemetryCount;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(FAST_MS_PER_TICK));
+    }
+}
+*/

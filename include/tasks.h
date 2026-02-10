@@ -10,6 +10,7 @@
 #include <semphr.h>
 #include <task.h>
 
+// Makes the variables declared in the respective files global
 extern SensorData_t sensorData;
 extern ControlOutput_t controlOutput;
 extern StateVector_t stateVector;
