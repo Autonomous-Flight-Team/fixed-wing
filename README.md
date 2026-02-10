@@ -26,3 +26,15 @@ Rules:
 [Code Diagram](https://drive.google.com/file/d/1e6DcJ7m8J9z2wx--jvXQMBKPv8Ds4tnV/view?usp=drive_link)<br>
 [Flight Time Calculation](https://drive.google.com/file/d/1WnyeDU5Te4U1FLIaFBqfFJF0_qbGJzMQ/view?usp=drive_link)<br>
 [Radio Integration](https://drive.google.com/file/d/1g9vTinkki6MTD-Emi6HOWP1msIlG8_G7/view?usp=drive_link)
+
+## 🛰️ MAVLink Message Discovery (Developer Notes)
+When you need to find MAVLink message IDs, structs, or decode helpers:
+1. Start from `#include <MAVLink.h>` and open the dependency header at:
+   `.pio/libdeps/teensy41/MAVLink/MAVLink.h`
+2. `MAVLink.h` includes `mavlink/common/mavlink.h`, which includes the generated message headers.
+3. Use `rg` to locate the specific message name in the generated headers:
+   - `rg -n "MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT" .pio/libdeps/teensy41/MAVLink/mavlink/common`
+   - `rg -n "set_attitude_target" .pio/libdeps/teensy41/MAVLink/mavlink/common`
+4. The message definitions live in files like:
+   - `.pio/libdeps/teensy41/MAVLink/mavlink/common/mavlink_msg_set_position_target_global_int.h`
+   - `.pio/libdeps/teensy41/MAVLink/mavlink/common/mavlink_msg_set_attitude_target.h`
