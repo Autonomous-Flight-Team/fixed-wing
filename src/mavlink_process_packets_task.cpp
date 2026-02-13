@@ -24,8 +24,10 @@ void MavlinkProcess900PacketTask(void *pvParameters) {
                 case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT: {
                     mavlink_set_position_target_global_int_t sp;
                     mavlink_msg_set_position_target_global_int_decode(&pkt.msg, &sp);
+                    
                     // TODO: Store position target setpoint (lat_int, lon_int, alt, type_mask, coordinate_frame).
                     break;
+
                 }
                 case MAVLINK_MSG_ID_SET_ATTITUDE_TARGET: {
                     mavlink_set_attitude_target_t att;

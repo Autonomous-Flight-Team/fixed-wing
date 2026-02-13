@@ -39,6 +39,9 @@ void MavlinkRx900Task(void *pvParameters);
 void MavlinkRx24Task(void *pvParameters);
 void MavlinkControlDispatchTask(void *pvParameters);
 void MavlinkTelemetryDispatchTask(void *pvParameters);
+void MavlinkProcess900PacketTask(void *pvParameters);
+
+// Logging task?
 
 
 #endif

@@ -2,6 +2,7 @@
 #define TYPES_H
 
 #include <MAVLink.h>
+#include "FreeRTOS.h" // 1. Base definitions (TickType_t lives here)
 
 // TODO: Do we need an emergency landing mode?
 typedef enum { 
@@ -28,6 +29,17 @@ typedef struct {
     mavlink_message_t msg;
 } MavlinkRxPacket_t;
 
+template <typename T>
+struct Logging {
+    T data;
+    // Default constructor: handles cases where no value is provided
+    Logging() : data() {}
+
+    // Parameterized constructor: takes a value and moves it into 'data'
+    Logging(T value) : data(value) {}
+
+    TickType_t timestamp;
+};
 
 typedef struct {
     // IMU
