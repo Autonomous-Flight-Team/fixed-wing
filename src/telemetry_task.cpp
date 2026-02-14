@@ -1,4 +1,5 @@
 /*
+Authors:
 Advik Sharma - github.com/jpyces
 */
 
@@ -10,4 +11,10 @@ Advik Sharma - github.com/jpyces
 
 QueueHandle_t global_logging_queue = nullptr;
 
-//void GlobalLoggingTask
+void GlobalLoggingTask(void *pvParameters){
+
+    for (;;)
+    {
+        
+    }
+}

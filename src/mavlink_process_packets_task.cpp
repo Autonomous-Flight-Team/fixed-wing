@@ -21,10 +21,9 @@ void RxMavlinkProcess900PacketTask(void *pvParameters) {
     for (;;) {
         if (xQueueReceive(mavlinkRxQueue900, &pkt, pdMS_TO_TICKS(SLOW_MS_PER_TICK)) == pdTRUE) {
             switch (pkt.msg.msgid) {
+                // Parsing and storing pkt message based on their msgID into globally accessible variables
                 case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT: {
                     mavlink_msg_set_position_target_global_int_decode(&pkt.msg, &set_global_position);
-                    
-                    // TODO: Store position target setpoint (lat_int, lon_int, alt, type_mask, coordinate_frame).
                     break;
 
                 }
