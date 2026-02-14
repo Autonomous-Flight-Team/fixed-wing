@@ -23,8 +23,13 @@ SensorData_t sensorData = {0};
 ControlOutput_t controlOutput = {0};
 StateVector_t stateVector = {0};
 BlinkState_t blinkState = {false};
+mavlink_set_position_target_global_int_t set_global_position = {};
+mavlink_manual_control_t manual_control_data = {};
+mavlink_command_long_t specific_cmds = {};
+mavlink_set_mode_t mode = {};
 
-DroneMode mode = MANUAL;
+
+DroneMode droneMode = MANUAL;
 
 // Program Entry Point
 
@@ -58,10 +63,9 @@ void setup() {
     xTaskCreate(MavlinkRx900Task, "Rx900", STACK_DEPTH, NULL, *priority + 3, NULL);
     xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
     xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
-    xTaskCreate(MavlinkProcess900PacketTask, "900MhzProces", STACK_DEPTH, NULL, *priority + 2, NULL);
+    xTaskCreate(RxMavlinkProcess900PacketTask, "900MhzProces", STACK_DEPTH, NULL, *priority + 2, NULL);
     vTaskStartScheduler();
 
 }
 
 void loop() {}
-

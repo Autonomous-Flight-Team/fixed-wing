@@ -23,7 +23,10 @@ extern volatile uint32_t mavlinkRxDrop900;
 extern volatile uint32_t mavlinkRxDrop24;
 extern volatile mavlink_message_t mavlinkLastTelemetry;
 extern volatile uint32_t mavlinkTelemetryCount;
-
+extern mavlink_set_position_target_global_int_t set_global_position;
+extern mavlink_manual_control_t manual_control_data;
+extern mavlink_command_long_t specific_cmds;
+extern mavlink_set_mode_t mode;
 
 // Task Declarations
 void ImuBaroTask(void *pvParameters);
@@ -39,7 +42,7 @@ void MavlinkRx900Task(void *pvParameters);
 void MavlinkRx24Task(void *pvParameters);
 void MavlinkControlDispatchTask(void *pvParameters);
 void MavlinkTelemetryDispatchTask(void *pvParameters);
-void MavlinkProcess900PacketTask(void *pvParameters);
+void RxMavlinkProcess900PacketTask(void *pvParameters);
 
 // Logging task?
 
