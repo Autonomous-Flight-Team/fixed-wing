@@ -17,6 +17,7 @@ extern StateVector_t stateVector;
 extern SemaphoreHandle_t dataMutex;
 extern BlinkState_t blinkState;
 
+// Mavlink shit
 extern QueueHandle_t mavlinkRxQueue900;
 extern QueueHandle_t mavlinkRxQueue24;
 extern volatile uint32_t mavlinkRxDrop900;
@@ -28,7 +29,13 @@ extern mavlink_manual_control_t manual_control_data;
 extern mavlink_command_long_t specific_cmds;
 extern mavlink_set_mode_t mode;
 
+// Logging
+extern QueueHandle_t sensorData_logging_queue;
+extern QueueHandle_t controlOutput_logging_queue;
+extern QueueHandle_t stateVector_logging_queue;
+
 // Task Declarations
+// General
 void ImuBaroTask(void *pvParameters);
 void GPSTask(void *pvParameters);
 void StateTask(void *pvParameters);
@@ -45,6 +52,6 @@ void MavlinkTelemetryDispatchTask(void *pvParameters);
 void RxMavlinkProcess900PacketTask(void *pvParameters);
 
 // Logging task?
-
+void GlobalLoggingTask(void *pvParameters);
 
 #endif

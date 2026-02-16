@@ -30,13 +30,13 @@ typedef struct {
 } MavlinkRxPacket_t;
 
 template <typename T>
-struct Logging {
+struct Log {
     T data;
     // Default constructor: handles cases where no value is provided
-    Logging() : data() {}
+    Log() : data() {}
 
     // Parameterized constructor: takes a value and moves it into 'data'
-    Logging(T value) : data(value) {}
+    Log(T value) : data(value) {}
 
     TickType_t timestamp;
 };

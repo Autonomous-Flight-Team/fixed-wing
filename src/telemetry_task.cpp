@@ -9,9 +9,12 @@ Advik Sharma - github.com/jpyces
 #include <arduino_freertos.h>
 #include <queue.h>
 
-QueueHandle_t global_logging_queue = nullptr;
-
 void GlobalLoggingTask(void *pvParameters){
+    /*
+    sensorData_logging_queue
+    controlOutput_logging_queue
+    stateVector_logging_queue
+    */
 
     for (;;)
     {

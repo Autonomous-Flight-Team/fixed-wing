@@ -23,12 +23,16 @@ ControlOutput_t controlOutput = {0};
 StateVector_t stateVector = {0};
 BlinkState_t blinkState = {false};
 
-// Mavlink Manual Control
+// Mavlink Manual Control - 900 Rx variables
 mavlink_set_position_target_global_int_t set_global_position = {};
 mavlink_manual_control_t manual_control_data = {};
 mavlink_command_long_t specific_cmds = {};
 mavlink_set_mode_t mode = {};
 
+// Logging Queues
+QueueHandle_t sensorData_logging_queue;
+QueueHandle_t controlOutput_logging_queue;
+QueueHandle_t stateVector_logging_queue;
 
 DroneMode droneMode = MANUAL; // Perhaps use mavlinks version, or update custom mavlink cmd
 

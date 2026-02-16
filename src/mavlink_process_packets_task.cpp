@@ -14,8 +14,8 @@ const int SLOW_MS_PER_TICK = 2; // 500 Hz poll
 const int FAST_MS_PER_TICK = 1; // 1000 Hz poll
 
 void RxMavlinkProcess900PacketTask(void *pvParameters) {
-    TickType_t lastWake = xTaskGetTickCount();
-    const TickType_t freq = pdMS_TO_TICKS(SLOW_MS_PER_TICK);
+    //TickType_t lastWake = xTaskGetTickCount();
+    //const TickType_t freq = pdMS_TO_TICKS(SLOW_MS_PER_TICK);
 
     MavlinkRxPacket_t pkt;
     for (;;) {
