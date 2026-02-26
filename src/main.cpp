@@ -1,4 +1,3 @@
-
 // Authors
 // - Colin Faletto github.com/faletto
 
@@ -34,7 +33,7 @@ QueueHandle_t sensorData_logging_queue;
 QueueHandle_t controlOutput_logging_queue;
 QueueHandle_t stateVector_logging_queue;
 
-DroneMode droneMode = MANUAL; // Perhaps use mavlinks version, or update custom mavlink cmd
+DroneMode droneMode = MANUAL;  // Perhaps use mavlinks version, or update custom mavlink cmd
 
 static void InitMavlinkRx() {
     // MAVLink RX queues (ensure Serial2/Serial3 are initialized in HardwareInit).
