@@ -1,5 +1,3 @@
-
-
 // Authors
 // - Colin Faletto github.com/faletto
 
@@ -12,6 +10,7 @@
 #include <semphr.h>
 #include <task.h>
 
+#define QUEUE_SIZE 100
 SemaphoreHandle_t dataMutex;
 
 
@@ -24,7 +23,49 @@ ControlOutput_t controlOutput = {0};
 StateVector_t stateVector = {0};
 BlinkState_t blinkState = {false};
 
-DroneMode mode = MANUAL;
+// Mavlink Manual Control - 900 Rx variables
+mavlink_set_position_target_global_int_t set_global_position = {};
+mavlink_manual_control_t manual_control_data = {};
+mavlink_command_long_t specific_cmds = {};
+mavlink_set_mode_t mode = {};
+QueueHandle_t mavlinkRxQueue900 = nullptr;
+QueueHandle_t mavlinkRxQueue24  = nullptr;
+
+// Logging Queues
+QueueHandle_t sensorData_logging_queue = nullptr;
+QueueHandle_t controlOutput_logging_queue = nullptr;
+QueueHandle_t stateVector_logging_queue = nullptr;
+QueueHandle_t manualControl_t_logging_queue = nullptr;
+
+// Transmit
+QueueHandle_t gsaTxQueue;
+
+DroneMode droneMode = MANUAL;  // Perhaps use mavlinks version, or update custom mavlink cmd
+
+static void InitMavlinkRx() {
+    // MAVLink RX queues (ensure Serial2/Serial3 are initialized in HardwareInit).
+    mavlinkRxQueue900 = xQueueCreate(QUEUE_SIZE, sizeof(MavlinkRxPacket_t));
+    mavlinkRxQueue24  = xQueueCreate(QUEUE_SIZE, sizeof(MavlinkRxPacket_t));
+
+    xTaskCreate(MavlinkRx900Task, "Rx900", STACK_DEPTH, NULL, *priority + 3, NULL);
+    xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
+    xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
+    xTaskCreate(RxMavlinkProcess900PacketTask, "900MhzProces", STACK_DEPTH, NULL, *priority + 2, NULL);
+}
+
+static void InitLogging()
+{
+    sensorData_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<SensorData_t>));
+    controlOutput_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<ControlOutput_t>));
+    stateVector_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<StateVector_t>));
+    manualControl_t_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<mavlink_manual_control_t>));
+    xTaskCreate(SDCardTask, "Logger", STACK_DEPTH, NULL, *priority, NULL);
+}
+
+static void InitTx() {
+    gsaTxQueue = xQueueCreate(16, sizeof(GSATxPacket_t));
+    xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority + 2, NULL);
+}
 
 // Program Entry Point
 
@@ -35,10 +76,6 @@ void setup() {
 
     HardwareInit();
     dataMutex = xSemaphoreCreateMutex();
-
-    // MAVLink RX queues (ensure Serial2/Serial3 are initialized in HardwareInit).
-    mavlinkRxQueue900 = xQueueCreate(16, sizeof(MavlinkRxPacket_t));
-    mavlinkRxQueue24  = xQueueCreate(16, sizeof(MavlinkRxPacket_t));
     
 
     // xTaskCreate Paramenters:
@@ -49,20 +86,18 @@ void setup() {
     // uxPriority - Priority level (lower is more priority)
     // pxCreatedTask - Pointer to task handle
     xTaskCreate(BlinkTask, "Blink", STACK_DEPTH, NULL, *priority, NULL);
-    // xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, *priority + 1, NULL);
+    xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, *priority + 1, NULL);
     // xTaskCreate(GPSTask, "GPS", STACK_DEPTH, NULL, *priority + 2, NULL);
-    // xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, *priority, NULL);
-    // xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);
+    xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, *priority, NULL);
+    xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);
     // xTaskCreate(GSARxTask, "GSARx", STACK_DEPTH, NULL, *priority+3, NULL);
     // xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority+3, NULL);
-    xTaskCreate(MavlinkRx900Task, "Rx900", STACK_DEPTH, NULL, *priority + 3, NULL);
-    xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
-    xTaskCreate(MavlinkControlDispatchTask, "CtlDisp", STACK_DEPTH, NULL, *priority + 4, NULL);
-    xTaskCreate(MavlinkTelemetryDispatchTask, "TelDisp", STACK_DEPTH, NULL, *priority + 1, NULL);
-
+    InitLogging();
+    xTaskCreate(LoggingQueueSmokeTestTask, "LogQSmoke", STACK_DEPTH, NULL, *priority, NULL);
+    InitMavlinkRx();
+    InitTx();
     vTaskStartScheduler();
 
 }
 
 void loop() {}
-

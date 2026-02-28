@@ -24,8 +24,6 @@ void StateTask(void *pvParameters) {
             //     (float)sensorData.ay,
             //     (float)sensorData.az
             // );
-            
-               
             xSemaphoreGive(dataMutex);
         }
         vTaskDelayUntil(&lastWake, freq);
