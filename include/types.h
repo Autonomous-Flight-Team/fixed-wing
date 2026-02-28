@@ -42,6 +42,11 @@ struct Log {
 };
 
 typedef struct {
+    StateVector_t state;
+    SensorData_t sensor;
+} GSATxPacket_t;
+
+typedef struct {
     // IMU
         // Linear Acceleration
         float ax, ay, az;

@@ -46,6 +46,11 @@ static void InitMavlinkRx() {
     xTaskCreate(RxMavlinkProcess900PacketTask, "900MhzProces", STACK_DEPTH, NULL, *priority + 2, NULL);
 }
 
+static void InitTx() {
+    gsaTxQueue = xQueueCreate(16, sizeof(GSATxPacket_t));
+    xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority + 2, NULL);
+}
+
 // Program Entry Point
 
 void setup() {
@@ -72,6 +77,7 @@ void setup() {
     // xTaskCreate(GSARxTask, "GSARx", STACK_DEPTH, NULL, *priority+3, NULL);
     // xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority+3, NULL);
     InitMavlinkRx();
+    InitTx();
     vTaskStartScheduler();
 
 }
