@@ -8,15 +8,17 @@ Advik Sharma - github.com/jpyces
 #include <arduino_freertos.h>
 #include <queue.h>
 
-
+// Stolen from mavlink_rx_tasks.cpp - perhaps refactor to not repeat
+// RX loops are paced to avoid starving other tasks; dispatch is slightly faster.
 
 void RxMavlinkProcess900PacketTask(void *pvParameters) {
     //TickType_t lastWake = xTaskGetTickCount();
-    //const TickType_t freq = pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK);
+    //const TickType_t freq = pdMS_TO_TICKS(SLOW_MS_PER_TICK);
 
     MavlinkRxPacket_t pkt;
     for (;;) {
-        if (xQueueReceive(mavlinkRxQueue900, &pkt, pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK)) == pdTRUE) {
+        if (xQueueReceive(mavlinkRxQueue900, &pkt, pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK)) == pdTRUE)
+        {
             switch (pkt.msg.msgid) {
                 // Parsing and storing pkt message based on their msgID into globally accessible variables
                 case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT: {
@@ -36,6 +38,7 @@ void RxMavlinkProcess900PacketTask(void *pvParameters) {
                 case MAVLINK_MSG_ID_MANUAL_CONTROL: {
                     mavlink_msg_manual_control_decode(&pkt.msg, &manual_control_data);
                     // TODO: Store manual control inputs (x, y, z, r, buttons).
+                    
                     break;
                 }
                 case MAVLINK_MSG_ID_COMMAND_LONG: {
@@ -55,7 +58,6 @@ void RxMavlinkProcess900PacketTask(void *pvParameters) {
                 default:
                     break;
             }
-                
         }
         vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
     }

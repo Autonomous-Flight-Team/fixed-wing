@@ -39,6 +39,7 @@ const int RX_FAST_MS_PER_TICK = 1; // 1000 Hz poll
 extern QueueHandle_t sensorData_logging_queue;
 extern QueueHandle_t controlOutput_logging_queue;
 extern QueueHandle_t stateVector_logging_queue;
+extern QueueHandle_t manualControl_t_logging_queue;
 
 // Task Declarations
 // General
@@ -57,7 +58,23 @@ void MavlinkControlDispatchTask(void *pvParameters);
 void MavlinkTelemetryDispatchTask(void *pvParameters);
 void RxMavlinkProcess900PacketTask(void *pvParameters);
 
-// Logging task?
-void GlobalLoggingTask(void *pvParameters);
+// Logging task Declarations
+void SDCardTask(void *pvParameters);
+void LoggingQueueSmokeTestTask(void *pvParameters);
+template <typename T>
+void FillLoggingQueues(Log<T> log) = delete;
+void FillLoggingQueues(Log<StateVector_t> log);
+void FillLoggingQueues(Log<SensorData_t> log);
+void FillLoggingQueues(Log<ControlOutput_t> log);
+void FillLoggingQueues(Log<mavlink_manual_control_t> log);
+
+// Templated functions need to be in header files in order to be accessible and 
+// proper linking
+template <typename T>
+inline void ConstructLog(const T &data) {
+    Log<T> log(data);
+    log.timestamp = xTaskGetTickCount();
+    FillLoggingQueues(log);
+}
 
 #endif

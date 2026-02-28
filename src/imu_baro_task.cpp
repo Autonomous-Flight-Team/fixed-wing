@@ -51,4 +51,3 @@ void ImuBaroTask(void *pvParameters) {
         vTaskDelayUntil(&lastWake, freq);
     }
 }
-
