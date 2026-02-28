@@ -41,6 +41,8 @@ struct Log {
     TickType_t timestamp;
 };
 
+
+
 typedef struct {
     // IMU
         // Linear Acceleration
@@ -73,6 +75,12 @@ typedef struct {
     // Angular Acceleration
     double p, q, r;
 } StateVector_t;
+
+
+typedef struct {
+    StateVector_t state;
+    SensorData_t sensor;
+} GSATxPacket_t;
 
 typedef struct {
   double somethingneedstobehere;

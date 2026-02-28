@@ -37,6 +37,9 @@ QueueHandle_t controlOutput_logging_queue = nullptr;
 QueueHandle_t stateVector_logging_queue = nullptr;
 QueueHandle_t manualControl_t_logging_queue = nullptr;
 
+// Transmit
+QueueHandle_t gsaTxQueue;
+
 DroneMode droneMode = MANUAL;  // Perhaps use mavlinks version, or update custom mavlink cmd
 
 static void InitMavlinkRx() {
@@ -57,6 +60,11 @@ static void InitLogging()
     stateVector_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<StateVector_t>));
     manualControl_t_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<mavlink_manual_control_t>));
     xTaskCreate(SDCardTask, "Logger", STACK_DEPTH, NULL, *priority, NULL);
+}
+
+static void InitTx() {
+    gsaTxQueue = xQueueCreate(16, sizeof(GSATxPacket_t));
+    xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority + 2, NULL);
 }
 
 // Program Entry Point
@@ -87,6 +95,7 @@ void setup() {
     InitLogging();
     xTaskCreate(LoggingQueueSmokeTestTask, "LogQSmoke", STACK_DEPTH, NULL, *priority, NULL);
     InitMavlinkRx();
+    InitTx();
     vTaskStartScheduler();
 
 }
