@@ -1,11 +1,22 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-
 #include <MAVLink.h>
+#include "FreeRTOS.h" // 1. Base definitions (TickType_t lives here)
 
 // TODO: Do we need an emergency landing mode?
-typedef enum { MANUAL, AUTO } DroneMode;
+typedef enum { 
+    MANUAL = 0,
+    MISSION_ABORT = 1,  // Communication failure fail-safe - need landing sequence
+
+    // Autonomous Modes
+    FULL_AUTONOMOUS = 2, // Future complete autonomous mode
+    
+    AUTO_CRUISE = 3,  // Specifying Autonomous modes will make mission profile easier to encapsulate
+    AUTO_LAND = 4, // Future self-landing mechanism beyond MISSION_ABORT
+    AUTO_TAKEOFF = 5,  // Future self-takeoff mode
+    
+} DroneMode;
 
 // Mavlink relevant types
 typedef enum {
@@ -17,6 +28,19 @@ typedef struct {
     MavlinkLink_t link;
     mavlink_message_t msg;
 } MavlinkRxPacket_t;
+
+template <typename T>
+struct Log {
+    T data;
+    // Default constructor: handles cases where no value is provided
+    Log() : data() {}
+
+    // Parameterized constructor: takes a value and moves it into 'data'
+    Log(T value) : data(value) {}
+
+    TickType_t timestamp;
+};
+
 
 
 typedef struct {
@@ -51,6 +75,12 @@ typedef struct {
     // Angular Acceleration
     double p, q, r;
 } StateVector_t;
+
+
+typedef struct {
+    StateVector_t state;
+    SensorData_t sensor;
+} GSATxPacket_t;
 
 typedef struct {
   double somethingneedstobehere;

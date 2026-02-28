@@ -8,26 +8,20 @@ Advik Sharma - github.com/jpyces
 #include <arduino_freertos.h>
 #include <queue.h>
 
-#define MAVLINK_COMM_900 MAVLINK_COMM_0
-#define MAVLINK_COMM_24  MAVLINK_COMM_1
-
-// TODO: Update these UARTs to match our wiring
-#define MAVLINK_SERIAL_900 Serial2
-#define MAVLINK_SERIAL_24  Serial3
-
-QueueHandle_t mavlinkRxQueue900 = nullptr;
-QueueHandle_t mavlinkRxQueue24  = nullptr;
+// Shared RX queues and telemetry state, defined here and exposed via tasks.h.
+//QueueHandle_t mavlinkRxQueue900 = nullptr;
+//QueueHandle_t mavlinkRxQueue24  = nullptr;
 volatile uint32_t mavlinkRxDrop900 = 0;
 volatile uint32_t mavlinkRxDrop24  = 0;
 volatile mavlink_message_t mavlinkLastTelemetry = {};
 volatile uint32_t mavlinkTelemetryCount = 0;
 
-const int SLOW_MS_PER_TICK = 2; // 500 Hz poll
-const int FAST_MS_PER_TICK = 1; // 1000 Hz poll
 
+// Purpose: Parse MAVLink from the 900 MHz UART and enqueue full messages.
+// Structure: Tight read/parse loop + periodic delay to bound CPU usage.
 void MavlinkRx900Task(void *pvParameters) {
     TickType_t lastWake = xTaskGetTickCount();
-    const TickType_t freq = pdMS_TO_TICKS(SLOW_MS_PER_TICK); 
+    const TickType_t freq = pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK); 
     mavlink_message_t msg;
     mavlink_status_t status;
 
@@ -47,12 +41,14 @@ void MavlinkRx900Task(void *pvParameters) {
     }
 }
 
+// Purpose: Parse MAVLink from the 2.4 GHz UART and enqueue full messages.
+// Structure: Mirrors 900 MHz RX to keep link handling symmetric.
 void MavlinkRx24Task(void *pvParameters) {
     TickType_t lastWake = xTaskGetTickCount();
-    const TickType_t freq = pdMS_TO_TICKS(SLOW_MS_PER_TICK);
+    const TickType_t freq = pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK);
     mavlink_message_t msg;
     mavlink_status_t status;
-
+    
     for (;;) {
         while (MAVLINK_SERIAL_24.available() > 0) {
             uint8_t c = static_cast<uint8_t>(MAVLINK_SERIAL_24.read());
@@ -69,10 +65,12 @@ void MavlinkRx24Task(void *pvParameters) {
     }
 }
 
+/* Purpose: Consume control messages from the 900 MHz queue and act on them.
+// Structure: Queue receive + switch on msgid for extensible handling.
 void MavlinkControlDispatchTask(void *pvParameters) {
     MavlinkRxPacket_t pkt;
     for (;;) {
-        if (xQueueReceive(mavlinkRxQueue900, &pkt, pdMS_TO_TICKS(SLOW_MS_PER_TICK)) == pdTRUE) {
+        if (xQueueReceive(mavlinkRxQueue900, &pkt, pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK)) == pdTRUE) {
             switch (pkt.msg.msgid) {
                 case MAVLINK_MSG_ID_MANUAL_CONTROL: {
                     mavlink_manual_control_t mc;
@@ -84,19 +82,22 @@ void MavlinkControlDispatchTask(void *pvParameters) {
                     break;
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(FAST_MS_PER_TICK));
+        vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
     }
 }
 
+// Purpose: Consume telemetry from the 2.4 GHz queue and record latest state.
+// Structure: Queue receive + lightweight storage for downstream consumers.
 void MavlinkTelemetryDispatchTask(void *pvParameters) {
     MavlinkRxPacket_t pkt;
     for (;;) {
-        if (xQueueReceive(mavlinkRxQueue24, &pkt, pdMS_TO_TICKS(SLOW_MS_PER_TICK)) == pdTRUE) {
+        if (xQueueReceive(mavlinkRxQueue24, &pkt, pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK)) == pdTRUE) {
             // Store last raw telemetry message for flexible handling.
             mavlinkLastTelemetry = pkt.msg;
             ++mavlinkTelemetryCount;
         }
 
-        vTaskDelay(pdMS_TO_TICKS(FAST_MS_PER_TICK));
+        vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
     }
 }
+*/
