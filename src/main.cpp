@@ -33,6 +33,9 @@ QueueHandle_t sensorData_logging_queue;
 QueueHandle_t controlOutput_logging_queue;
 QueueHandle_t stateVector_logging_queue;
 
+// Transmit
+QueueHandle_t gsaTxQueue;
+
 DroneMode droneMode = MANUAL;  // Perhaps use mavlinks version, or update custom mavlink cmd
 
 static void InitMavlinkRx() {
