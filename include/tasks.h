@@ -17,17 +17,23 @@ extern StateVector_t stateVector;
 extern SemaphoreHandle_t dataMutex;
 extern BlinkState_t blinkState;
 
-// Mavlink shit
+// Mavlink recieve shit
 extern QueueHandle_t mavlinkRxQueue900;
 extern QueueHandle_t mavlinkRxQueue24;
 extern volatile uint32_t mavlinkRxDrop900;
 extern volatile uint32_t mavlinkRxDrop24;
+extern QueueHandle_t maxlinkTxQueue900;
 extern volatile mavlink_message_t mavlinkLastTelemetry;
 extern volatile uint32_t mavlinkTelemetryCount;
 extern mavlink_set_position_target_global_int_t set_global_position;
 extern mavlink_manual_control_t manual_control_data;
 extern mavlink_command_long_t specific_cmds;
 extern mavlink_set_mode_t mode;
+
+
+// RX loops are paced to avoid starving other tasks; dispatch is slightly faster.
+const int RX_SLOW_MS_PER_TICK = 2; // 500 Hz poll
+const int RX_FAST_MS_PER_TICK = 1; // 1000 Hz poll
 
 // Logging
 extern QueueHandle_t sensorData_logging_queue;

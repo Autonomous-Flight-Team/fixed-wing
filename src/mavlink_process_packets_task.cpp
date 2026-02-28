@@ -8,18 +8,15 @@ Advik Sharma - github.com/jpyces
 #include <arduino_freertos.h>
 #include <queue.h>
 
-// Stolen from mavlink_rx_tasks.cpp - perhaps refactor to not repeat
-// RX loops are paced to avoid starving other tasks; dispatch is slightly faster.
-const int SLOW_MS_PER_TICK = 2; // 500 Hz poll
-const int FAST_MS_PER_TICK = 1; // 1000 Hz poll
+
 
 void RxMavlinkProcess900PacketTask(void *pvParameters) {
     //TickType_t lastWake = xTaskGetTickCount();
-    //const TickType_t freq = pdMS_TO_TICKS(SLOW_MS_PER_TICK);
+    //const TickType_t freq = pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK);
 
     MavlinkRxPacket_t pkt;
     for (;;) {
-        if (xQueueReceive(mavlinkRxQueue900, &pkt, pdMS_TO_TICKS(SLOW_MS_PER_TICK)) == pdTRUE) {
+        if (xQueueReceive(mavlinkRxQueue900, &pkt, pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK)) == pdTRUE) {
             switch (pkt.msg.msgid) {
                 // Parsing and storing pkt message based on their msgID into globally accessible variables
                 case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT: {
@@ -60,6 +57,6 @@ void RxMavlinkProcess900PacketTask(void *pvParameters) {
             }
                 
         }
-        vTaskDelay(pdMS_TO_TICKS(FAST_MS_PER_TICK));
+        vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
     }
 }
