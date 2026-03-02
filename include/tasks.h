@@ -31,10 +31,6 @@ extern mavlink_command_long_t specific_cmds;
 extern mavlink_set_mode_t mode;
 
 
-// Transmit stuff
-extern QueueHandle_t gsaTxQueue;
-
-
 // RX loops are paced to avoid starving other tasks; dispatch is slightly faster.
 const int RX_SLOW_MS_PER_TICK = 2; // 500 Hz poll
 const int RX_FAST_MS_PER_TICK = 1; // 1000 Hz poll
@@ -44,6 +40,12 @@ extern QueueHandle_t sensorData_logging_queue;
 extern QueueHandle_t controlOutput_logging_queue;
 extern QueueHandle_t stateVector_logging_queue;
 extern QueueHandle_t manualControl_t_logging_queue;
+extern QueueHandle_t sensorData_latest_queue;
+extern QueueHandle_t stateVector_latest_queue;
+extern volatile uint32_t sensorData_logging_drop_count;
+extern volatile uint32_t controlOutput_logging_drop_count;
+extern volatile uint32_t stateVector_logging_drop_count;
+extern volatile uint32_t manualControl_logging_drop_count;
 
 // Task Declarations
 // General

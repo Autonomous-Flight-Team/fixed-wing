@@ -36,9 +36,12 @@ QueueHandle_t sensorData_logging_queue = nullptr;
 QueueHandle_t controlOutput_logging_queue = nullptr;
 QueueHandle_t stateVector_logging_queue = nullptr;
 QueueHandle_t manualControl_t_logging_queue = nullptr;
-
-// Transmit
-QueueHandle_t gsaTxQueue;
+QueueHandle_t sensorData_latest_queue = nullptr;
+QueueHandle_t stateVector_latest_queue = nullptr;
+volatile uint32_t sensorData_logging_drop_count = 0;
+volatile uint32_t controlOutput_logging_drop_count = 0;
+volatile uint32_t stateVector_logging_drop_count = 0;
+volatile uint32_t manualControl_logging_drop_count = 0;
 
 DroneMode droneMode = MANUAL;  // Perhaps use mavlinks version, or update custom mavlink cmd
 
@@ -59,11 +62,12 @@ static void InitLogging()
     controlOutput_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<ControlOutput_t>));
     stateVector_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<StateVector_t>));
     manualControl_t_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<mavlink_manual_control_t>));
+    sensorData_latest_queue = xQueueCreate(1, sizeof(Log<SensorData_t>));
+    stateVector_latest_queue = xQueueCreate(1, sizeof(Log<StateVector_t>));
     xTaskCreate(SDCardTask, "Logger", STACK_DEPTH, NULL, *priority, NULL);
 }
 
 static void InitTx() {
-    gsaTxQueue = xQueueCreate(16, sizeof(GSATxPacket_t));
     xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority + 2, NULL);
 }
 
@@ -71,6 +75,12 @@ static void InitTx() {
 
 void setup() {
     Serial.begin(115200);
+    // Give PlatformIO monitor time to attach to USB CDC before tasks start logging.
+    const uint32_t serialWaitStartMs = millis();
+    while (!Serial && (millis() - serialWaitStartMs) < 5000U) {
+        delay(10);
+    }
+    Serial.println("[BOOT] setup start");
     pinMode(arduino::LED_BUILTIN, arduino::OUTPUT);
     // digitalWrite(arduino::LED_BUILTIN, arduino::HIGH);
 
@@ -96,6 +106,7 @@ void setup() {
     xTaskCreate(LoggingQueueSmokeTestTask, "LogQSmoke", STACK_DEPTH, NULL, *priority, NULL);
     InitMavlinkRx();
     InitTx();
+    Serial.println("[BOOT] starting scheduler");
     vTaskStartScheduler();
 
 }
