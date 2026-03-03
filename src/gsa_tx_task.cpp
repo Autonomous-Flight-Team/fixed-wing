@@ -14,6 +14,7 @@ void GSATxTask(void *pvParameters) {
     if (xSemaphoreTake(dataMutex, pdMS_TO_TICKS(MS_PER_TICK))) {
         GSATxPacket_t msg = {stateVector, sensorData};
         xQueueSendToBack(gsaTxQueue,&msg,pdMS_TO_TICKS(MS_PER_TICK));
+        xSemaphoreGive(dataMutex);
     }
 
     for (;;) {
