@@ -52,7 +52,7 @@ static void InitMavlinkRx() {
 
     xTaskCreate(MavlinkRx900Task, "Rx900", STACK_DEPTH, NULL, *priority + 3, NULL);
     xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
-    xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
+    //xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
     xTaskCreate(RxMavlinkProcess900PacketTask, "900MhzProces", STACK_DEPTH, NULL, *priority + 2, NULL);
 }
 
@@ -75,6 +75,8 @@ static void InitTx() {
 
 void setup() {
     Serial.begin(115200);
+    Serial3.begin(57600);
+
     // Give PlatformIO monitor time to attach to USB CDC before tasks start logging.
     const uint32_t serialWaitStartMs = millis();
     while (!Serial && (millis() - serialWaitStartMs) < 5000U) {
