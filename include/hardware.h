@@ -26,7 +26,7 @@ extern TinyGPSPlus gps;
 #define MAVLINK_COMM_24  MAVLINK_COMM_1
 
 // TODO: Update these UARTs to match our wiring
-#define MAVLINK_SERIAL_900 Serial3
-#define MAVLINK_SERIAL_24  Serial2
+#define MAVLINK_SERIAL_900 Serial2
+#define MAVLINK_SERIAL_24  Serial3
 
 #endif

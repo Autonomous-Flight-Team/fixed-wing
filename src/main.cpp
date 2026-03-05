@@ -75,7 +75,7 @@ static void InitTx() {
 
 void setup() {
     Serial.begin(115200);
-    Serial3.begin(57600);
+    Serial2.begin(57600);
 
     // Give PlatformIO monitor time to attach to USB CDC before tasks start logging.
     const uint32_t serialWaitStartMs = millis();

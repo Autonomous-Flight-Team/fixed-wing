@@ -32,7 +32,7 @@ void MavlinkRx900Task(void *pvParameters) {
                 MavlinkRxPacket_t pkt;
                 pkt.link = LINK_900MHZ;
                 pkt.msg = msg;
-                Serial.println("900 mhz received");
+                Serial.println("900 mhz received!");
                 if (xQueueSend(mavlinkRxQueue900, &pkt, 0) != pdTRUE) {
                     ++mavlinkRxDrop900;
                 }
