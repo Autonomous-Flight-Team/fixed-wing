@@ -18,7 +18,7 @@ void LoggingQueueSmokeTestTask(void *pvParameters) {
 
     uint32_t i = 0;
     TickType_t lastReport = xTaskGetTickCount();
-    Serial.println("[LOG-TEST] Continuous queue fill started");
+    //Serial.println("[LOG-TEST] Continuous queue fill started");
 
     for (;;) {
         Log<SensorData_t> sensorLog = {};
@@ -46,27 +46,27 @@ void LoggingQueueSmokeTestTask(void *pvParameters) {
         const TickType_t now = xTaskGetTickCount();
         if ((now - lastReport) >= pdMS_TO_TICKS(1000)) {
             lastReport = now;
-            Serial.println("[LOG-TEST] Queue stats:");
+            //Serial.println("[LOG-TEST] Queue stats:");
 
-            Serial.print("  sensor q=");
-            Serial.print(uxQueueMessagesWaiting(sensorData_logging_queue));
-            Serial.print(" dropped=");
-            Serial.println(sensorData_logging_drop_count);
+            //Serial.print("  sensor q=");
+            //Serial.print(uxQueueMessagesWaiting(sensorData_logging_queue));
+            //Serial.print(" dropped=");
+            //Serial.println(sensorData_logging_drop_count);
 
-            Serial.print("  control q=");
-            Serial.print(uxQueueMessagesWaiting(controlOutput_logging_queue));
-            Serial.print(" dropped=");
-            Serial.println(controlOutput_logging_drop_count);
+            //Serial.print("  control q=");
+            //Serial.print(uxQueueMessagesWaiting(controlOutput_logging_queue));
+            //Serial.print(" dropped=");
+            //Serial.println(controlOutput_logging_drop_count);
 
-            Serial.print("  state q=");
-            Serial.print(uxQueueMessagesWaiting(stateVector_logging_queue));
-            Serial.print(" dropped=");
-            Serial.println(stateVector_logging_drop_count);
+            //Serial.print("  state q=");
+            //Serial.print(uxQueueMessagesWaiting(stateVector_logging_queue));
+            //Serial.print(" dropped=");
+            //Serial.println(stateVector_logging_drop_count);
 
-            Serial.print("  manual q=");
-            Serial.print(uxQueueMessagesWaiting(manualControl_t_logging_queue));
-            Serial.print(" dropped=");
-            Serial.println(manualControl_logging_drop_count);
+            //Serial.print("  manual q=");
+            //Serial.print(uxQueueMessagesWaiting(manualControl_t_logging_queue));
+            //Serial.print(" dropped=");
+            //Serial.println(manualControl_logging_drop_count);
         }
 
         vTaskDelay(pdMS_TO_TICKS(100));
