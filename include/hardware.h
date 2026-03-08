@@ -24,6 +24,7 @@ extern TinyGPSPlus gps;
 
 #define MAVLINK_COMM_900 MAVLINK_COMM_0
 #define MAVLINK_COMM_24  MAVLINK_COMM_1
+inline constexpr uint32_t MAVLINK_BAUD = 460800;
 
 // TODO: Update these UARTs to match our wiring
 #define MAVLINK_SERIAL_900 Serial2

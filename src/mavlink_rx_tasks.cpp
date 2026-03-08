@@ -28,11 +28,14 @@ void MavlinkRx900Task(void *pvParameters) {
     for (;;) {
         while (MAVLINK_SERIAL_900.available() > 0) {
             uint8_t c = static_cast<uint8_t>(MAVLINK_SERIAL_900.read());
-            if (mavlink_parse_char(MAVLINK_COMM_900, c, &msg, &status)) {
+            //Serial.println("RAWWWW");
+            //Serial.println(MAVLINK_SERIAL_900.read()); 
+            if (mavlink_parse_char(MAVLINK_COMM_900, c, &msg, &status))
+            {
                 MavlinkRxPacket_t pkt;
                 pkt.link = LINK_900MHZ;
                 pkt.msg = msg;
-                Serial.println("900 mhz received!");
+                //Serial.println("900 Mhz received!");
                 if (xQueueSend(mavlinkRxQueue900, &pkt, 0) != pdTRUE) {
                     ++mavlinkRxDrop900;
                 }

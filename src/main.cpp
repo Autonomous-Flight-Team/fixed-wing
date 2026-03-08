@@ -15,6 +15,7 @@ SemaphoreHandle_t dataMutex;
 
 
 int STACK_DEPTH = 512;
+int RX_PROCESS_STACK_DEPTH = 1536;
 int priority[] = {1,2,3,4};
 
 
@@ -53,7 +54,7 @@ static void InitMavlinkRx() {
     xTaskCreate(MavlinkRx900Task, "Rx900", STACK_DEPTH, NULL, *priority + 3, NULL);
     xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
     //xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
-    xTaskCreate(RxMavlinkProcess900PacketTask, "900MhzProces", STACK_DEPTH, NULL, *priority + 2, NULL);
+    xTaskCreate(RxMavlinkProcess900PacketTask, "900MhzProces", RX_PROCESS_STACK_DEPTH, NULL, *priority + 2, NULL);
 }
 
 static void InitLogging()
@@ -68,14 +69,19 @@ static void InitLogging()
 }
 
 static void InitTx() {
-    xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority + 2, NULL);
+    // Keep Serial2 MAVLink-only for QGC. GSATxTask writes a raw custom packet and
+    // can corrupt MAVLink framing on the same UART.
+    // xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority + 2, NULL);
+    xTaskCreate(MavlinkHeartbeatTask, "MavHb", STACK_DEPTH, NULL, *priority + 2, NULL);
+    xTaskCreate(MavlinkLatencyProbeTask, "MavLat", STACK_DEPTH, NULL, *priority + 2, NULL);
 }
 
 // Program Entry Point
 
 void setup() {
     Serial.begin(115200);
-    Serial2.begin(57600);
+    MAVLINK_SERIAL_900.begin(MAVLINK_BAUD);
+    MAVLINK_SERIAL_24.begin(MAVLINK_BAUD);
 
     // Give PlatformIO monitor time to attach to USB CDC before tasks start logging.
     const uint32_t serialWaitStartMs = millis();
@@ -98,10 +104,10 @@ void setup() {
     // uxPriority - Priority level (lower is more priority)
     // pxCreatedTask - Pointer to task handle
     xTaskCreate(BlinkTask, "Blink", STACK_DEPTH, NULL, *priority, NULL);
-    xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, *priority + 1, NULL);
+    //xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, *priority + 1, NULL);
     // xTaskCreate(GPSTask, "GPS", STACK_DEPTH, NULL, *priority + 2, NULL);
-    xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, *priority, NULL);
-    xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);
+    //xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, *priority, NULL);
+    //xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);
     // xTaskCreate(GSARxTask, "GSARx", STACK_DEPTH, NULL, *priority+3, NULL);
     // xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority+3, NULL);
     InitLogging();
