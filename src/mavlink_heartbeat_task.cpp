@@ -106,14 +106,26 @@ uint16_t ThrottleToPwm(float value) {
     return static_cast<uint16_t>(pwm);
 }
 
+void LockMavlinkData() {
+    if (mavlinkDataMutex != nullptr) {
+        xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);
+    }
+}
+
+void UnlockMavlinkData() {
+    if (mavlinkDataMutex != nullptr) {
+        xSemaphoreGive(mavlinkDataMutex);
+    }
+}
+
 ManualInputSnapshot ReadManualInputSnapshot() {
     ManualInputSnapshot snapshot = {};
-    taskENTER_CRITICAL();
+    LockMavlinkData();
     snapshot.mc = manual_control_data;
     snapshot.lastInputMs = mavlinkLastManualInputMs;
     snapshot.armed = mavlinkVehicleArmed;
     snapshot.manualInputEnabled = (mavlinkVehicleBaseMode & MAV_MODE_FLAG_MANUAL_INPUT_ENABLED) != 0U;
-    taskEXIT_CRITICAL();
+    UnlockMavlinkData();
     return snapshot;
 }
 
@@ -274,9 +286,11 @@ void MavlinkHeartbeatTask(void *pvParameters) {
 
         if ((loopCounter % 50U) == 0U) {
             mavlink_message_t heartbeatMsg = {};
+            LockMavlinkData();
             const uint8_t baseMode = mavlinkVehicleBaseMode;
             const uint32_t customMode = mavlinkVehicleCustomMode;
             const uint8_t systemState = mavlinkVehicleSystemStatus;
+            UnlockMavlinkData();
             mavlink_msg_heartbeat_pack(
                 MAVLINK_SYSTEM_ID,
                 MAVLINK_COMPONENT_ID,

@@ -16,6 +16,7 @@ extern ControlOutput_t controlOutput;
 extern StateVector_t stateVector;
 extern SemaphoreHandle_t dataMutex;
 extern BlinkState_t blinkState;
+extern SemaphoreHandle_t mavlinkDataMutex;
 
 // Mavlink recieve shit
 extern QueueHandle_t mavlinkRxQueue900;

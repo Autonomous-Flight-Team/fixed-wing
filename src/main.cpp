@@ -10,7 +10,7 @@
 #include <task.h>
 
 #define QUEUE_SIZE 100
-SemaphoreHandle_t dataMutex, controllerMutex, stateMutex;
+SemaphoreHandle_t dataMutex, controllerMutex, stateMutex, mavlinkDataMutex;
 
 int STACK_DEPTH = 512;
 int RX_PROCESS_STACK_DEPTH = 1536;
@@ -122,6 +122,8 @@ void setup()
     intialize_manual_control();
     controllerMutex = xSemaphoreCreateMutex();
     stateMutex = xSemaphoreCreateMutex();
+    mavlinkDataMutex = xSemaphoreCreateMutex();
+    
 
     // xTaskCreate Paramenters:
     // pvTaskCode - Pointer to task

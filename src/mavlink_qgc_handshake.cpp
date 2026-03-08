@@ -161,6 +161,9 @@ QgcParamDef *FindParamByName(const char *name) {
 }
 
 void SetArmedState(bool armed) {
+    if (mavlinkDataMutex != nullptr) {
+        xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);
+    }
     mavlinkVehicleArmed = armed;
     mavlinkVehicleBaseMode |= MAV_MODE_FLAG_CUSTOM_MODE_ENABLED | MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
     if (armed) {
@@ -170,9 +173,15 @@ void SetArmedState(bool armed) {
         mavlinkVehicleBaseMode &= static_cast<uint8_t>(~MAV_MODE_FLAG_SAFETY_ARMED);
         mavlinkVehicleSystemStatus = MAV_STATE_ACTIVE;
     }
+    if (mavlinkDataMutex != nullptr) {
+        xSemaphoreGive(mavlinkDataMutex);
+    }
 }
 
 void UpdateVehicleMode(uint8_t baseMode, uint32_t customMode) {
+    if (mavlinkDataMutex != nullptr) {
+        xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);
+    }
     mavlinkVehicleBaseMode = static_cast<uint8_t>(
         baseMode | MAV_MODE_FLAG_CUSTOM_MODE_ENABLED | MAV_MODE_FLAG_MANUAL_INPUT_ENABLED
     );
@@ -181,6 +190,9 @@ void UpdateVehicleMode(uint8_t baseMode, uint32_t customMode) {
         mavlinkVehicleBaseMode |= MAV_MODE_FLAG_SAFETY_ARMED;
     } else {
         mavlinkVehicleBaseMode &= static_cast<uint8_t>(~MAV_MODE_FLAG_SAFETY_ARMED);
+    }
+    if (mavlinkDataMutex != nullptr) {
+        xSemaphoreGive(mavlinkDataMutex);
     }
 }
 }  // namespace
@@ -377,7 +389,13 @@ void HandleQgcHandshakePacket(const MavlinkRxPacket_t &pkt) {
             mavlink_heartbeat_t gcsHeartbeat = {};
             mavlink_msg_heartbeat_decode(&pkt.msg, &gcsHeartbeat);
             if (gcsHeartbeat.type == MAV_TYPE_GCS) {
+                if (mavlinkDataMutex != nullptr) {
+                    xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);
+                }
                 mavlinkGcsPresent = true;
+                if (mavlinkDataMutex != nullptr) {
+                    xSemaphoreGive(mavlinkDataMutex);
+                }
             }
             break;
         }
