@@ -29,6 +29,14 @@ extern mavlink_set_position_target_global_int_t set_global_position;
 extern mavlink_manual_control_t manual_control_data;
 extern mavlink_command_long_t specific_cmds;
 extern mavlink_set_mode_t mode;
+extern volatile uint32_t mavlinkLastManualInputMs;
+extern volatile uint32_t mavlinkManualInputFrameCount;
+extern volatile uint8_t mavlinkControlPrintMode;
+extern volatile uint8_t mavlinkVehicleBaseMode;
+extern volatile uint32_t mavlinkVehicleCustomMode;
+extern volatile uint8_t mavlinkVehicleSystemStatus;
+extern volatile bool mavlinkVehicleArmed;
+extern volatile bool mavlinkGcsPresent;
 
 
 // RX loops are paced to avoid starving other tasks; dispatch is slightly faster.

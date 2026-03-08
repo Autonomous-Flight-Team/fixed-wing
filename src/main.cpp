@@ -29,6 +29,15 @@ mavlink_set_position_target_global_int_t set_global_position = {};
 mavlink_manual_control_t manual_control_data = {};
 mavlink_command_long_t specific_cmds = {};
 mavlink_set_mode_t mode = {};
+volatile uint32_t mavlinkLastManualInputMs = 0U;
+volatile uint32_t mavlinkManualInputFrameCount = 0U;
+volatile uint8_t mavlinkControlPrintMode = 1U;  // 1=armed-only, 2=always
+volatile uint8_t mavlinkVehicleBaseMode =
+    MAV_MODE_FLAG_CUSTOM_MODE_ENABLED | MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
+volatile uint32_t mavlinkVehicleCustomMode = 0U;
+volatile uint8_t mavlinkVehicleSystemStatus = MAV_STATE_ACTIVE;
+volatile bool mavlinkVehicleArmed = false;
+volatile bool mavlinkGcsPresent = false;
 QueueHandle_t mavlinkRxQueue900 = nullptr;
 QueueHandle_t mavlinkRxQueue24  = nullptr;
 
@@ -73,7 +82,8 @@ static void InitTx() {
     // can corrupt MAVLink framing on the same UART.
     // xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority + 2, NULL);
     xTaskCreate(MavlinkHeartbeatTask, "MavHb", STACK_DEPTH, NULL, *priority + 2, NULL);
-    xTaskCreate(MavlinkLatencyProbeTask, "MavLat", STACK_DEPTH, NULL, *priority + 2, NULL);
+    // Latency probe disabled to keep serial output focused on control and heartbeat.
+    // xTaskCreate(MavlinkLatencyProbeTask, "MavLat", STACK_DEPTH, NULL, *priority + 2, NULL);
 }
 
 // Program Entry Point

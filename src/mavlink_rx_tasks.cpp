@@ -26,6 +26,8 @@ void MavlinkRx900Task(void *pvParameters) {
     mavlink_status_t status;
 
     for (;;) {
+        //uint32_t time = micros();
+        //Serial.println("Task Start");
         while (MAVLINK_SERIAL_900.available() > 0) {
             uint8_t c = static_cast<uint8_t>(MAVLINK_SERIAL_900.read());
             //Serial.println("RAWWWW");
@@ -41,6 +43,8 @@ void MavlinkRx900Task(void *pvParameters) {
                 }
             }
         }
+        //Serial.println("Outside while loop");
+        //Serial.println(micros()-time);
         vTaskDelayUntil(&lastWake, freq);
     }
 }
@@ -64,8 +68,8 @@ void MavlinkRx24Task(void *pvParameters) {
                     ++mavlinkRxDrop24;
                 }
             }
+            vTaskDelayUntil(&lastWake, freq);
         }
-        vTaskDelayUntil(&lastWake, freq);
     }
 }
 

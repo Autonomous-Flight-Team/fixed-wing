@@ -83,8 +83,18 @@ typedef struct {
 } GSATxPacket_t;
 
 typedef struct {
-  double somethingneedstobehere;
-    //TODO
+    // Normalized commands in [-1, 1] except throttle in [0, 1].
+    float aileron;
+    float elevator;
+    float rudder;
+    float throttle;
+    // Servo-equivalent PWM outputs for easy hardware mapping.
+    uint16_t aileron_pwm;
+    uint16_t elevator_pwm;
+    uint16_t rudder_pwm;
+    uint16_t throttle_pwm;
+    // True when a fresh manual input frame has been received recently.
+    bool link_ok;
 } ControlOutput_t;
 
 typedef struct {

@@ -26,7 +26,15 @@ void LoggingQueueSmokeTestTask(void *pvParameters) {
         sensorLog.timestamp = xTaskGetTickCount();
 
         Log<ControlOutput_t> controlLog = {};
-        controlLog.data.somethingneedstobehere = static_cast<double>(i);
+        controlLog.data.aileron = static_cast<float>((i % 200) / 100.0f - 1.0f);
+        controlLog.data.elevator = static_cast<float>(((i + 25U) % 200) / 100.0f - 1.0f);
+        controlLog.data.rudder = static_cast<float>(((i + 50U) % 200) / 100.0f - 1.0f);
+        controlLog.data.throttle = static_cast<float>((i % 100) / 100.0f);
+        controlLog.data.aileron_pwm = static_cast<uint16_t>(1000U + (i % 1000U));
+        controlLog.data.elevator_pwm = static_cast<uint16_t>(1000U + ((i + 100U) % 1000U));
+        controlLog.data.rudder_pwm = static_cast<uint16_t>(1000U + ((i + 200U) % 1000U));
+        controlLog.data.throttle_pwm = static_cast<uint16_t>(1000U + ((i + 300U) % 1000U));
+        controlLog.data.link_ok = ((i % 2U) == 0U);
         controlLog.timestamp = xTaskGetTickCount();
 
         Log<StateVector_t> stateLog = {};
