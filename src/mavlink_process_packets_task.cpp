@@ -126,9 +126,8 @@ void RxMavlinkProcess900PacketTask(void *pvParameters) {
                 }
 
                 case MAVLINK_MSG_ID_MANUAL_CONTROL: {
-                    mavlink_manual_control_t mc = {};
-                    mavlink_msg_manual_control_decode(&pkt.msg, &mc);
-                    CommitManualInput(mc);
+                    mavlink_msg_manual_control_decode(&pkt.msg, &manual_control_data);
+                    CommitManualInput(manual_control_data);
                     PrintManualInputsIfDue("MAN");
                     break;
                 }
