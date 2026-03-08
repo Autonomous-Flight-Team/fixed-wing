@@ -17,6 +17,18 @@ uint32_t g_lastManualPrintMs = 0U;
 constexpr uint8_t kControlPrintArmedOnly = 1U;
 constexpr uint8_t kControlPrintAlways = 2U;
 
+void LockMavlinkData() {
+    if (mavlinkDataMutex != nullptr) {
+        xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);
+    }
+}
+
+void UnlockMavlinkData() {
+    if (mavlinkDataMutex != nullptr) {
+        xSemaphoreGive(mavlinkDataMutex);
+    }
+}
+
 int16_t PwmToAxis(uint16_t pwm) {
     if (pwm == 0U || pwm == 65535U) {
         return 0;
@@ -46,11 +58,9 @@ int16_t PwmToThrottle(uint16_t pwm) {
     return static_cast<int16_t>(scaled);
 }
 
-void UpdateManualInputMetadata() {
-    taskENTER_CRITICAL();
+void UpdateManualInputMetadataLocked() {
     mavlinkLastManualInputMs = millis();
     ++mavlinkManualInputFrameCount;
-    taskEXIT_CRITICAL();
 }
 
 void PrintManualInputsIfDue(const char *sourceTag) {
@@ -62,11 +72,11 @@ void PrintManualInputsIfDue(const char *sourceTag) {
     mavlink_manual_control_t mcSnapshot = {};
     bool armed = false;
     uint8_t printMode = kControlPrintArmedOnly;
-    taskENTER_CRITICAL();
+    LockMavlinkData();
     mcSnapshot = manual_control_data;
     armed = mavlinkVehicleArmed;
     printMode = mavlinkControlPrintMode;
-    taskEXIT_CRITICAL();
+    UnlockMavlinkData();
 
     if (printMode == kControlPrintArmedOnly && !armed) {
         return;
@@ -113,7 +123,9 @@ void RxMavlinkProcess900PacketTask(void *pvParameters) {
             switch (pkt.msg.msgid) {
                 // Parsing and storing pkt message based on their msgID into globally accessible variables
                 case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT: {
+                    LockMavlinkData();
                     mavlink_msg_set_position_target_global_int_decode(&pkt.msg, &set_global_position);
+                    UnlockMavlinkData();
                     break;
                 }
 
@@ -123,10 +135,10 @@ void RxMavlinkProcess900PacketTask(void *pvParameters) {
                 }
 
                 case MAVLINK_MSG_ID_MANUAL_CONTROL: {
-                    taskENTER_CRITICAL();
+                    LockMavlinkData();
                     mavlink_msg_manual_control_decode(&pkt.msg, &manual_control_data);
-                    taskEXIT_CRITICAL();
-                    UpdateManualInputMetadata();
+                    UpdateManualInputMetadataLocked();
+                    UnlockMavlinkData();
                     PrintManualInputsIfDue("MAN");
                     break;
                 }
@@ -140,21 +152,25 @@ void RxMavlinkProcess900PacketTask(void *pvParameters) {
                     mc.r = PwmToAxis(rc.chan4_raw);      // yaw
                     mc.z = PwmToThrottle(rc.chan3_raw);  // throttle [0..1000]
                     mc.buttons = 0U;
-                    taskENTER_CRITICAL();
+                    LockMavlinkData();
                     manual_control_data = mc;
-                    taskEXIT_CRITICAL();
-                    UpdateManualInputMetadata();
+                    UpdateManualInputMetadataLocked();
+                    UnlockMavlinkData();
                     PrintManualInputsIfDue("RCOVR");
                     break;
                 }
 
                 case MAVLINK_MSG_ID_COMMAND_LONG: {
+                    LockMavlinkData();
                     mavlink_msg_command_long_decode(&pkt.msg, &specific_cmds);
+                    UnlockMavlinkData();
                     break;
                 }
 
                 case MAVLINK_MSG_ID_SET_MODE: {
+                    LockMavlinkData();
                     mavlink_msg_set_mode_decode(&pkt.msg, &mode);
+                    UnlockMavlinkData();
                     break;
                 }
 

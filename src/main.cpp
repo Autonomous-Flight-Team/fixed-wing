@@ -12,6 +12,7 @@
 
 #define QUEUE_SIZE 100
 SemaphoreHandle_t dataMutex;
+SemaphoreHandle_t mavlinkDataMutex;
 
 
 int STACK_DEPTH = 512;
@@ -104,6 +105,7 @@ void setup() {
 
     HardwareInit();
     dataMutex = xSemaphoreCreateMutex();
+    mavlinkDataMutex = xSemaphoreCreateMutex();
     
 
     // xTaskCreate Paramenters:
