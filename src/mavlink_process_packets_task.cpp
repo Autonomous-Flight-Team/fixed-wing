@@ -46,9 +46,8 @@ int16_t PwmToThrottle(uint16_t pwm) {
     return static_cast<int16_t>(scaled);
 }
 
-void CommitManualInput(const mavlink_manual_control_t &mc) {
+void UpdateManualInputMetadata() {
     taskENTER_CRITICAL();
-    manual_control_data = mc;
     mavlinkLastManualInputMs = millis();
     ++mavlinkManualInputFrameCount;
     taskEXIT_CRITICAL();
@@ -120,14 +119,14 @@ void RxMavlinkProcess900PacketTask(void *pvParameters) {
 
                 // This case may be irrelevant - ATTTIUDE calculated locally by flight controller
                 case MAVLINK_MSG_ID_SET_ATTITUDE_TARGET: {
-                    mavlink_set_attitude_target_t attitude = {};
-                    mavlink_msg_set_attitude_target_decode(&pkt.msg, &attitude);
                     break;
                 }
 
                 case MAVLINK_MSG_ID_MANUAL_CONTROL: {
+                    taskENTER_CRITICAL();
                     mavlink_msg_manual_control_decode(&pkt.msg, &manual_control_data);
-                    CommitManualInput(manual_control_data);
+                    taskEXIT_CRITICAL();
+                    UpdateManualInputMetadata();
                     PrintManualInputsIfDue("MAN");
                     break;
                 }
@@ -141,7 +140,10 @@ void RxMavlinkProcess900PacketTask(void *pvParameters) {
                     mc.r = PwmToAxis(rc.chan4_raw);      // yaw
                     mc.z = PwmToThrottle(rc.chan3_raw);  // throttle [0..1000]
                     mc.buttons = 0U;
-                    CommitManualInput(mc);
+                    taskENTER_CRITICAL();
+                    manual_control_data = mc;
+                    taskEXIT_CRITICAL();
+                    UpdateManualInputMetadata();
                     PrintManualInputsIfDue("RCOVR");
                     break;
                 }
