@@ -16,6 +16,20 @@ volatile uint32_t mavlinkRxDrop24  = 0;
 volatile mavlink_message_t mavlinkLastTelemetry = {};
 volatile uint32_t mavlinkTelemetryCount = 0;
 
+namespace {
+void LockMavlinkData() {
+    if (mavlinkDataMutex != nullptr) {
+        xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);
+    }
+}
+
+void UnlockMavlinkData() {
+    if (mavlinkDataMutex != nullptr) {
+        xSemaphoreGive(mavlinkDataMutex);
+    }
+}
+}  // namespace
+
 
 // Purpose: Parse MAVLink from the 900 MHz UART and enqueue full messages.
 // Structure: Tight read/parse loop + periodic delay to bound CPU usage.
@@ -39,7 +53,9 @@ void MavlinkRx900Task(void *pvParameters) {
                 pkt.msg = msg;
                 //Serial.println("900 Mhz received!");
                 if (xQueueSend(mavlinkRxQueue900, &pkt, 0) != pdTRUE) {
+                    LockMavlinkData();
                     ++mavlinkRxDrop900;
+                    UnlockMavlinkData();
                 }
             }
         }
@@ -65,7 +81,9 @@ void MavlinkRx24Task(void *pvParameters) {
                 pkt.link = LINK_24GHZ;
                 pkt.msg = msg;
                 if (xQueueSend(mavlinkRxQueue24, &pkt, 0) != pdTRUE) {
+                    LockMavlinkData();
                     ++mavlinkRxDrop24;
+                    UnlockMavlinkData();
                 }
             }
             vTaskDelayUntil(&lastWake, freq);
@@ -101,8 +119,10 @@ void MavlinkTelemetryDispatchTask(void *pvParameters) {
     for (;;) {
         if (xQueueReceive(mavlinkRxQueue24, &pkt, pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK)) == pdTRUE) {
             // Store last raw telemetry message for flexible handling.
+            LockMavlinkData();
             mavlinkLastTelemetry = pkt.msg;
             ++mavlinkTelemetryCount;
+            UnlockMavlinkData();
         }
 
         vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
