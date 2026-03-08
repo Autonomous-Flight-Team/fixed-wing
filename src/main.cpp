@@ -116,6 +116,9 @@ void setup()
     // digitalWrite(arduino::LED_BUILTIN, arduino::HIGH);
 
     HardwareInit();
+    intialize_manual_control();
+    controllerMutex = xSemaphoreCreateMutex();
+    stateMutex = xSemaphoreCreateMutex();
     dataMutex = xSemaphoreCreateMutex();
 
     // Manual controls initialized

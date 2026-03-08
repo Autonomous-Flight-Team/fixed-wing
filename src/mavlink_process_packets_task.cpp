@@ -73,6 +73,7 @@ void PrintManualInputsIfDue(const char *sourceTag) {
     bool armed = false;
     uint8_t printMode = kControlPrintArmedOnly;
     LockMavlinkData();
+    
     mcSnapshot = manual_control_data;
     armed = mavlinkVehicleArmed;
     printMode = mavlinkControlPrintMode;

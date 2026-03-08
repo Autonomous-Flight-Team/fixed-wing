@@ -24,12 +24,12 @@ void servos_to_neutral()
     drone_release_servo.write(0);
 }
 
-void set_state(Controller_t *controllerData, SetServoStates_t *servoStates)
+void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servoStates)
 {
-    servoStates->set_throttle = clamp((servoStates->set_throttle + (controllerData->left_trig * throttle_rate) - (controllerData->right_trig * throttle_rate)), (float)0, throttle_limit);
-    servoStates->set_elevator = clamp(servoStates->set_elevator + controllerData->pitch_joystick * elevator_rate, (float)0, elevator_limit);
-    servoStates->set_aileron = clamp(servoStates->set_aileron + controllerData->roll_joystick * aileron_rate, (float)0, aileron_limit);
-    servoStates->set_rudder = clamp(servoStates->set_rudder + (controllerData->left_bump * -rudder_rate) + (controllerData->right_bump * rudder_rate), (float)0, rudder_limit);
+    servoStates->set_throttle = clamp((servoStates->set_throttle + controllerData->z * throttle_rate), (float)0, throttle_limit);
+    servoStates->set_elevator = clamp(servoStates->set_elevator + controllerData->y * elevator_rate, (float)0, elevator_limit);
+    servoStates->set_aileron = clamp(servoStates->set_aileron + controllerData->x * aileron_rate, (float)0, aileron_limit);
+    servoStates->set_rudder = clamp(servoStates->set_rudder + controllerData->r * rudder_rate, (float)0, rudder_limit);
     // Serial.print("Elevator: ");
     // Serial.println(servoStates->set_elevator);
     //  Serial.print(" Rudder:");
@@ -37,26 +37,26 @@ void set_state(Controller_t *controllerData, SetServoStates_t *servoStates)
     //  Serial.print(" Aileron:");
     //  Serial.println(servoStates->set_aileron);
 
-    if (controllerData->Y && !(servoStates->flaps))
-    {
-        servoStates->flaps = true;
-    }
-    else if (controllerData->A && servoStates->flaps)
-    {
-        servoStates->flaps = false;
-    }
+    // if (controllerData->Y && !(servoStates->flaps))
+    // {
+    //     servoStates->flaps = true;
+    // }
+    // else if (controllerData->A && servoStates->flaps)
+    // {
+    //     servoStates->flaps = false;
+    // }
 
-    if (controllerData->X)
-    {
-        servoStates->release_drone = true;
-    }
+    // if (controllerData->X)
+    // {
+    //     servoStates->release_drone = true;
+    // }
 
-    if (controllerData->B)
-    {
-        servoStates->set_aileron = aileron_neutral;
-        servoStates->set_rudder = rudder_neutral;
-        servoStates->set_elevator = elevator_neutral;
-    }
+    // if (controllerData->B)
+    // {
+    //     servoStates->set_aileron = aileron_neutral;
+    //     servoStates->set_rudder = rudder_neutral;
+    //     servoStates->set_elevator = elevator_neutral;
+    // }
 }
 
 void set_servos(const SetServoStates_t *servoStates) // currently doesn't set throttle
@@ -98,11 +98,11 @@ void updateStatesTask(void *pvParameters)
 
     for (;;)
     {
-        Controller_t localController;
-        if (xSemaphoreTake(controllerMutex, portMAX_DELAY))
+        mavlink_manual_control_t localController;
+        if (xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY))
         {
-            localController = controllerData;
-            xSemaphoreGive(controllerMutex);
+            localController = manual_control_data;
+            xSemaphoreGive(mavlinkDataMutex);
         }
         if (xSemaphoreTake(stateMutex, portMAX_DELAY))
         {
