@@ -121,6 +121,13 @@ void setup()
     stateMutex = xSemaphoreCreateMutex();
     dataMutex = xSemaphoreCreateMutex();
 
+    // Manual controls initialized
+    intialize_manual_control();
+    controllerMutex = xSemaphoreCreateMutex();
+    stateMutex = xSemaphoreCreateMutex();
+    mavlinkDataMutex = xSemaphoreCreateMutex();
+    
+
     // xTaskCreate Paramenters:
     // pvTaskCode - Pointer to task
     // pcName - Debugging Label
