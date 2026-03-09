@@ -16,6 +16,20 @@ volatile uint32_t mavlinkRxDrop24  = 0;
 volatile mavlink_message_t mavlinkLastTelemetry = {};
 volatile uint32_t mavlinkTelemetryCount = 0;
 
+namespace {
+void LockMavlinkData() {
+    if (mavlinkDataMutex != nullptr) {
+        xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);
+    }
+}
+
+void UnlockMavlinkData() {
+    if (mavlinkDataMutex != nullptr) {
+        xSemaphoreGive(mavlinkDataMutex);
+    }
+}
+}  // namespace
+
 
 // Purpose: Parse MAVLink from the 900 MHz UART and enqueue full messages.
 // Structure: Tight read/parse loop + periodic delay to bound CPU usage.
@@ -26,17 +40,27 @@ void MavlinkRx900Task(void *pvParameters) {
     mavlink_status_t status;
 
     for (;;) {
+        //uint32_t time = micros();
+        //Serial.println("Task Start");
         while (MAVLINK_SERIAL_900.available() > 0) {
             uint8_t c = static_cast<uint8_t>(MAVLINK_SERIAL_900.read());
-            if (mavlink_parse_char(MAVLINK_COMM_900, c, &msg, &status)) {
+            //Serial.println("RAWWWW");
+            //Serial.println(MAVLINK_SERIAL_900.read()); 
+            if (mavlink_parse_char(MAVLINK_COMM_900, c, &msg, &status))
+            {
                 MavlinkRxPacket_t pkt;
                 pkt.link = LINK_900MHZ;
                 pkt.msg = msg;
+                //Serial.println("900 Mhz received!");
+                xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);
                 if (xQueueSend(mavlinkRxQueue900, &pkt, 0) != pdTRUE) {
                     ++mavlinkRxDrop900;
                 }
+                xSemaphoreGive(mavlinkDataMutex);
             }
         }
+        //Serial.println("Outside while loop");
+        //Serial.println(micros()-time);
         vTaskDelayUntil(&lastWake, freq);
     }
 }
@@ -57,11 +81,13 @@ void MavlinkRx24Task(void *pvParameters) {
                 pkt.link = LINK_24GHZ;
                 pkt.msg = msg;
                 if (xQueueSend(mavlinkRxQueue24, &pkt, 0) != pdTRUE) {
+                    LockMavlinkData();
                     ++mavlinkRxDrop24;
+                    UnlockMavlinkData();
                 }
             }
+            vTaskDelayUntil(&lastWake, freq);
         }
-        vTaskDelayUntil(&lastWake, freq);
     }
 }
 
@@ -93,8 +119,10 @@ void MavlinkTelemetryDispatchTask(void *pvParameters) {
     for (;;) {
         if (xQueueReceive(mavlinkRxQueue24, &pkt, pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK)) == pdTRUE) {
             // Store last raw telemetry message for flexible handling.
+            LockMavlinkData();
             mavlinkLastTelemetry = pkt.msg;
             ++mavlinkTelemetryCount;
+            UnlockMavlinkData();
         }
 
         vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));

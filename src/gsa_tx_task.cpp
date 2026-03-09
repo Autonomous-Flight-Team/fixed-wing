@@ -5,22 +5,30 @@
 const int MS_PER_TICK = 10; // Replace with (1 / Hz)
 
 void GSATxTask(void *pvParameters) {
+    (void)pvParameters;
     TickType_t lastWake = xTaskGetTickCount();
     const TickType_t freq = pdMS_TO_TICKS(MS_PER_TICK);
-    GSATxPacket_t buf;    
+    GSATxPacket_t tx = {};
 
-    // TODO: Do we even need a queue here? Can't we just send the current
-    // state vector and sensor data directly?
-    if (xSemaphoreTake(dataMutex, pdMS_TO_TICKS(MS_PER_TICK))) {
-        GSATxPacket_t msg = {stateVector, sensorData};
-        xQueueSendToBack(gsaTxQueue,&msg,pdMS_TO_TICKS(MS_PER_TICK));
+    // Initialize from shared state so TX starts with a valid packet.
+    if (xSemaphoreTake(dataMutex, pdMS_TO_TICKS(MS_PER_TICK)) == pdTRUE) {
+        tx.state = stateVector;
+        tx.sensor = sensorData;
         xSemaphoreGive(dataMutex);
     }
 
     for (;;) {
-        if (xQueueReceive(gsaTxQueue, &buf, pdMS_TO_TICKS(MS_PER_TICK))) {
-            MAVLINK_SERIAL_900.write((uint8_t*)&buf, sizeof(buf));
+        Log<StateVector_t> stateLog = {};
+        if (xQueuePeek(stateVector_latest_queue, &stateLog, 0) == pdTRUE) {
+            tx.state = stateLog.data;
         }
+
+        Log<SensorData_t> sensorLog = {};
+        if (xQueuePeek(sensorData_latest_queue, &sensorLog, 0) == pdTRUE) {
+            tx.sensor = sensorLog.data;
+        }
+
+        MAVLINK_SERIAL_900.write((uint8_t *)&tx, sizeof(tx));
         vTaskDelayUntil(&lastWake, freq);
     }
 }
