@@ -52,11 +52,11 @@ void MavlinkRx900Task(void *pvParameters) {
                 pkt.link = LINK_900MHZ;
                 pkt.msg = msg;
                 //Serial.println("900 Mhz received!");
+                xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);
                 if (xQueueSend(mavlinkRxQueue900, &pkt, 0) != pdTRUE) {
-                    LockMavlinkData();
                     ++mavlinkRxDrop900;
-                    UnlockMavlinkData();
                 }
+                xSemaphoreGive(mavlinkDataMutex);
             }
         }
         //Serial.println("Outside while loop");

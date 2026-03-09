@@ -34,7 +34,7 @@ int elevator_loc = elevator_limit / 2;
 int rudder_loc = rudder_limit / 2;
 
 // Rate controls
-float aileron_rate = 0.5f / 1000;
-float elevator_rate = 0.5f / 1000;
-float rudder_rate = 0.5f / 1000;
-float throttle_rate = 0.01f / 1000;
+float aileron_rate = 0.5f;
+float elevator_rate = 0.5f;
+float rudder_rate = 0.5f;
+float throttle_rate = 0.01f;
