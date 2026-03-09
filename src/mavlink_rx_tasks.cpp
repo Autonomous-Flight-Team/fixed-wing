@@ -80,11 +80,12 @@ void MavlinkRx24Task(void *pvParameters) {
                 MavlinkRxPacket_t pkt;
                 pkt.link = LINK_24GHZ;
                 pkt.msg = msg;
+
+                xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);  // Writing to global, so need the mutex
                 if (xQueueSend(mavlinkRxQueue24, &pkt, 0) != pdTRUE) {
-                    LockMavlinkData();
                     ++mavlinkRxDrop24;
-                    UnlockMavlinkData();
                 }
+                xSemaphoreGive(mavlinkDataMutex);
             }
             vTaskDelayUntil(&lastWake, freq);
         }
