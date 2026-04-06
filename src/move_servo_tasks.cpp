@@ -26,6 +26,24 @@ void servos_to_neutral()
 
 void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servoStates)
 {
+    // set deadzones
+    if (abs(controllerData->z) - DEADZONE < 0)
+    {
+        controllerData->z = 0;
+    }
+    if (abs(controllerData->x) - DEADZONE < 0)
+    {
+        controllerData->x = 0;
+    }
+    if (abs(controllerData->y) - DEADZONE < 0)
+    {
+        controllerData->y = 0;
+    }
+    if (abs(controllerData->r) - DEADZONE < 0)
+    {
+        controllerData->r = 0;
+    }
+
     servoStates->set_throttle = clamp((servoStates->set_throttle + controllerData->z * throttle_rate), (float)0, throttle_limit);
     servoStates->set_elevator = clamp(servoStates->set_elevator + controllerData->x * elevator_rate, (float)0, elevator_limit);
     servoStates->set_aileron = clamp(servoStates->set_aileron + controllerData->y * aileron_rate, (float)0, aileron_limit);
@@ -70,8 +88,8 @@ void set_servos(const SetServoStates_t *servoStates) // currently doesn't set th
 
     elevator_servo.write(servoStates->set_elevator);
     rudder_servo.write(servoStates->set_rudder);
-    left_aileron_servo.write(servoStates->set_aileron);
-    right_aileron_servo.write(aileron_limit - servoStates->set_aileron);
+    left_aileron_servo.write(aileron_limit - servoStates->set_aileron);
+    right_aileron_servo.write(servoStates->set_aileron);
 
     if (servoStates->flaps)
     {

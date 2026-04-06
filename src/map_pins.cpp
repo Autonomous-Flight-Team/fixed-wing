@@ -11,6 +11,8 @@ int throttle_pin = 2;
 int control_surface_pin = 23; // Set control surfaces to neutral button push
 int drone_release_pin = 11;
 
+int esc_pin = 0;
+
 // Servos
 Servo left_aileron_servo;
 Servo right_aileron_servo;
@@ -19,6 +21,7 @@ Servo rudder_servo;
 Servo right_flap_servo;
 Servo left_flap_servo;
 Servo drone_release_servo;
+Servo ESC;
 
 float throttle = 0.0f;
 
