@@ -1,6 +1,7 @@
 // Authors
 // Marie Andken
 #include <FreeRTOS.h>
+#include <Arduino.h>
 
 #include "map_pins.h"
 #include "tasks.h"
@@ -118,6 +119,7 @@ void writeServoTask(void *pvParameters)
 {
     TickType_t lastWake = xTaskGetTickCount();
     const TickType_t freq = pdMS_TO_TICKS(20);
+    uint32_t lastPilotLatencyPrintMs = 0U;
     for (;;)
     {
         if (xSemaphoreTake(stateMutex, portMAX_DELAY))
@@ -125,6 +127,23 @@ void writeServoTask(void *pvParameters)
             set_servos(&servoStateData);
 
             xSemaphoreGive(stateMutex);
+        }
+
+        const uint32_t nowUs = micros();
+        const uint32_t lastInputUs = mavlinkLastManualInputUs;
+        const uint32_t oneWayUs = mavlinkLatencyOneWayAvgUs;
+        const uint32_t fcAgeUs = (lastInputUs == 0U) ? 0U : (nowUs - lastInputUs);
+        mavlinkPilotLatencyEstimateUs = oneWayUs + fcAgeUs;
+
+        const uint32_t nowMs = millis();
+        if ((nowMs - lastPilotLatencyPrintMs) >= 250U && lastInputUs != 0U && oneWayUs != 0U) {
+            lastPilotLatencyPrintMs = nowMs;
+            Serial.print("[MAVLINK][PILOT_LATENCY_ESTIMATE] pilot_end_to_end_estimate_ms=");
+            Serial.print(mavlinkPilotLatencyEstimateUs / 1000U);
+            Serial.print(" radio_link_one_way_avg_ms=");
+            Serial.print(oneWayUs / 1000U);
+            Serial.print(" flight_controller_input_age_ms=");
+            Serial.println(fcAgeUs / 1000U);
         }
         vTaskDelayUntil(&lastWake, freq);
     }

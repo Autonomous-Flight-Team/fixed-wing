@@ -14,10 +14,12 @@ volatile uint32_t g_lastProbeSeq = 0U;
 volatile uint32_t g_lastProbeSentUs = 0U;
 volatile bool g_probeAwaitingResponse = false;
 uint16_t g_probeCounter = 0U;
+uint32_t g_probePacketCount = 0U;
 uint32_t g_rttSampleCount = 0U;
-uint32_t g_rttSumMs = 0U;
+uint64_t g_rttSumUs = 0U;
 uint32_t g_rttMinMs = 0xFFFFFFFFUL;
 uint32_t g_rttMaxMs = 0U;
+uint32_t g_rttTimeoutCount = 0U;
 uint8_t g_latencyResponderSystemId = 0U;
 
 struct QgcParamDef {
@@ -204,10 +206,15 @@ void MavlinkLatencyProbeTask(void *pvParameters) {
     TickType_t lastWake = xTaskGetTickCount();
 
     for (;;) {
-        // if (g_probeAwaitingResponse) {
-        //     Serial.print("[MAVLINK][LATENCY] No response for seq ");
-        //     Serial.println(g_lastProbeSeq);
-        // }
+        if (g_probeAwaitingResponse) {
+            ++g_rttTimeoutCount;
+            Serial.print("[MAVLINK][LATENCY] timeout packet#");
+            Serial.print(g_probePacketCount);
+            Serial.print(" seq=");
+            Serial.print(g_lastProbeSeq);
+            Serial.print(" totalTimeouts=");
+            Serial.println(g_rttTimeoutCount);
+        }
 
         const uint32_t seq = LATENCY_PING_SEQ_MAGIC | static_cast<uint32_t>(g_probeCounter++);
         const uint32_t nowUs = micros();
@@ -218,17 +225,20 @@ void MavlinkLatencyProbeTask(void *pvParameters) {
         g_lastProbeSeq = seq;
         g_lastProbeSentUs = nowUs;
         g_probeAwaitingResponse = true;
+        ++g_probePacketCount;
 
         SendPing(static_cast<uint64_t>(nowUs), seq, targetSystem, targetComponent);
-        // Serial.print("[MAVLINK][LATENCY] Probe sent to ");
-        // Serial.print(targetSystem);
-        // Serial.print("/");
-        // Serial.println(targetComponent);
+        Serial.print("[MAVLINK][LATENCY] packet#");
+        Serial.print(g_probePacketCount);
+        Serial.print(" sent to ");
+        Serial.print(targetSystem);
+        Serial.print("/");
+        Serial.println(targetComponent);
         vTaskDelayUntil(&lastWake, period);
     }
 }
 
-void HandleQgcHandshakePacket(const MavlinkRxPacket_t &pkt) {
+void ProcessQgcHandshakePacket(const MavlinkRxPacket_t &pkt) {
     UpdatePeerFromPacket(pkt);
 
     switch (pkt.msg.msgid) {
@@ -420,8 +430,8 @@ void HandleQgcHandshakePacket(const MavlinkRxPacket_t &pkt) {
             if (targetedToUs && probeMatch) {
                 if (g_latencyResponderSystemId == 0U) {
                     g_latencyResponderSystemId = pkt.msg.sysid;
-                    // Serial.print("[MAVLINK][LATENCY] Lock responder sysid=");
-                    // Serial.println(g_latencyResponderSystemId);
+                    Serial.print("[MAVLINK][LATENCY] Lock responder sysid=");
+                    Serial.println(g_latencyResponderSystemId);
                 }
                 if (pkt.msg.sysid != g_latencyResponderSystemId) {
                     break;
@@ -431,31 +441,57 @@ void HandleQgcHandshakePacket(const MavlinkRxPacket_t &pkt) {
                 const uint32_t rttMs = rttUs / 1000U;
                 g_probeAwaitingResponse = false;
                 ++g_rttSampleCount;
-                g_rttSumMs += rttMs;
+                g_rttSumUs += rttUs;
+                mavlinkLatencyRttLastUs = rttUs;
+                if (mavlinkLatencyRttAvgUs == 0U) {
+                    mavlinkLatencyRttAvgUs = rttUs;
+                } else {
+                    // EWMA smoothing (80% previous, 20% new) for pilot-facing stability.
+                    mavlinkLatencyRttAvgUs = (mavlinkLatencyRttAvgUs * 4U + rttUs) / 5U;
+                }
+                mavlinkLatencyOneWayAvgUs = mavlinkLatencyRttAvgUs / 2U;
                 if (rttMs < g_rttMinMs) {
                     g_rttMinMs = rttMs;
                 }
                 if (rttMs > g_rttMaxMs) {
                     g_rttMaxMs = rttMs;
                 }
-                const uint32_t avgMs = (g_rttSampleCount == 0U) ? 0U : (g_rttSumMs / g_rttSampleCount);
+                const uint32_t avgUs = (g_rttSampleCount == 0U)
+                    ? 0U
+                    : static_cast<uint32_t>(g_rttSumUs / g_rttSampleCount);
+                const uint32_t avgMsWhole = avgUs / 1000U;
+                const uint32_t avgMsFrac = avgUs % 1000U;
 
-                // Serial.print("[MAVLINK][LATENCY] RTT ms: ");
-                // Serial.print(rttMs);
-                // Serial.print(" avg/min/max: ");
-                // Serial.print(avgMs);
-                // Serial.print("/");
-                // Serial.print(g_rttMinMs);
-                // Serial.print("/");
-                // Serial.println(g_rttMaxMs);
+                Serial.print("[MAVLINK][LATENCY] packet#");
+                Serial.print(g_probePacketCount);
+                Serial.print(" seq=");
+                Serial.print(g_lastProbeSeq);
+                Serial.print(" RTT ms: ");
+                Serial.print(rttMs);
+                Serial.print(" avg/min/max: ");
+                Serial.print(avgMsWhole);
+                Serial.print(".");
+                if (avgMsFrac < 100U) {
+                    Serial.print("0");
+                }
+                if (avgMsFrac < 10U) {
+                    Serial.print("0");
+                }
+                Serial.print(avgMsFrac);
+                Serial.print("/");
+                Serial.print(g_rttMinMs);
+                Serial.print("/");
+                Serial.println(g_rttMaxMs);
 
-                char msg[50] = {};
+                char msg[80] = {};
                 snprintf(
                     msg,
                     sizeof(msg),
-                    "RTT %lu avg %lu",
+                    "pkt%lu RTT %lu avg %lu.%03lu",
+                    static_cast<unsigned long>(g_probePacketCount),
                     static_cast<unsigned long>(rttMs),
-                    static_cast<unsigned long>(avgMs)
+                    static_cast<unsigned long>(avgMsWhole),
+                    static_cast<unsigned long>(avgMsFrac)
                 );
                 SendStatusTextInfo(msg);
             }
@@ -464,5 +500,21 @@ void HandleQgcHandshakePacket(const MavlinkRxPacket_t &pkt) {
 
         default:
             break;
+    }
+}
+
+void MavlinkQgcHandshakeTask(void *pvParameters) {
+    (void)pvParameters;
+
+    MavlinkRxPacket_t pkt = {};
+    for (;;) {
+        if (mavlinkQgcHandshakeQueue == nullptr) {
+            vTaskDelay(pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK));
+            continue;
+        }
+
+        if (xQueueReceive(mavlinkQgcHandshakeQueue, &pkt, pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK)) == pdTRUE) {
+            ProcessQgcHandshakePacket(pkt);
+        }
     }
 }

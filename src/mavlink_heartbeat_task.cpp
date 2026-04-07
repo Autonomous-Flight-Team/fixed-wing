@@ -272,17 +272,9 @@ void MavlinkHeartbeatTask(void *pvParameters) {
     const TickType_t period = pdMS_TO_TICKS(20);  // 50 Hz control loop
     TickType_t lastWake = xTaskGetTickCount();
     uint32_t loopCounter = 0U;
-    uint32_t lastUpdateMs = millis();
-    SimFlightState sim = {};
     for (;;) {
-        const uint32_t nowMs = millis();
-        float dtSec = static_cast<float>(nowMs - lastUpdateMs) / 1000.0f;
-        lastUpdateMs = nowMs;
-        dtSec = Clampf(dtSec, 0.01f, 0.05f);
-
         const ManualInputSnapshot inputSnapshot = ReadManualInputSnapshot();
         UpdateControlOutput(inputSnapshot);
-        UpdateSimFromManualControl(sim, dtSec, inputSnapshot);
 
         if ((loopCounter % 50U) == 0U) {
             mavlink_message_t heartbeatMsg = {};
@@ -305,14 +297,33 @@ void MavlinkHeartbeatTask(void *pvParameters) {
             SendSysStatus();
         }
 
-        if ((loopCounter % 5U) == 0U) {
-            SendGpsRawInt(sim);
-            SendGlobalPositionInt(sim);
-            SendAttitude(sim);
-            SendVfrHud(sim);
-        }
-
         ++loopCounter;
+        vTaskDelayUntil(&lastWake, period);
+    }
+}
+
+void MavlinkSimulatedTelemetryTask(void *pvParameters) {
+    (void)pvParameters;
+
+    const TickType_t period = pdMS_TO_TICKS(100);  // 10 Hz simulated telemetry
+    TickType_t lastWake = xTaskGetTickCount();
+    uint32_t lastUpdateMs = millis();
+    SimFlightState sim = {};
+
+    for (;;) {
+        const uint32_t nowMs = millis();
+        float dtSec = static_cast<float>(nowMs - lastUpdateMs) / 1000.0f;
+        lastUpdateMs = nowMs;
+        dtSec = Clampf(dtSec, 0.01f, 0.2f);
+
+        const ManualInputSnapshot inputSnapshot = ReadManualInputSnapshot();
+        UpdateSimFromManualControl(sim, dtSec, inputSnapshot);
+
+        SendGpsRawInt(sim);
+        SendGlobalPositionInt(sim);
+        SendAttitude(sim);
+        SendVfrHud(sim);
+
         vTaskDelayUntil(&lastWake, period);
     }
 }

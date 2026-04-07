@@ -21,6 +21,7 @@ extern SemaphoreHandle_t mavlinkDataMutex;
 // Mavlink recieve shit
 extern QueueHandle_t mavlinkRxQueue900;
 extern QueueHandle_t mavlinkRxQueue24;
+extern QueueHandle_t mavlinkQgcHandshakeQueue;
 extern volatile uint32_t mavlinkRxDrop900;
 extern volatile uint32_t mavlinkRxDrop24;
 extern QueueHandle_t maxlinkTxQueue900;
@@ -31,6 +32,7 @@ extern mavlink_manual_control_t manual_control_data;
 extern mavlink_command_long_t specific_cmds;
 extern mavlink_set_mode_t mode;
 extern volatile uint32_t mavlinkLastManualInputMs;
+extern volatile uint32_t mavlinkLastManualInputUs;
 extern volatile uint32_t mavlinkManualInputFrameCount;
 extern volatile uint8_t mavlinkControlPrintMode;
 extern volatile uint8_t mavlinkVehicleBaseMode;
@@ -38,6 +40,10 @@ extern volatile uint32_t mavlinkVehicleCustomMode;
 extern volatile uint8_t mavlinkVehicleSystemStatus;
 extern volatile bool mavlinkVehicleArmed;
 extern volatile bool mavlinkGcsPresent;
+extern volatile uint32_t mavlinkLatencyRttLastUs;
+extern volatile uint32_t mavlinkLatencyRttAvgUs;
+extern volatile uint32_t mavlinkLatencyOneWayAvgUs;
+extern volatile uint32_t mavlinkPilotLatencyEstimateUs;
 
 // RX loops are paced to avoid starving other tasks; dispatch is slightly faster.
 const int RX_SLOW_MS_PER_TICK = 2; // 500 Hz poll
@@ -82,7 +88,8 @@ void MavlinkRx24Task(void *pvParameters);
 void MavlinkControlDispatchTask(void *pvParameters);
 void MavlinkTelemetryDispatchTask(void *pvParameters);
 void RxMavlinkProcess900PacketTask(void *pvParameters);
-void HandleQgcHandshakePacket(const MavlinkRxPacket_t &pkt);
+void MavlinkQgcHandshakeTask(void *pvParameters);
+void MavlinkSimulatedTelemetryTask(void *pvParameters);
 
 // Manual tasks
 void writeServoTask(void *pvParameters);

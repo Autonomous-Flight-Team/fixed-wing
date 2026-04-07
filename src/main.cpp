@@ -15,6 +15,7 @@ SemaphoreHandle_t dataMutex, controllerMutex, stateMutex, mavlinkDataMutex;
 int STACK_DEPTH = 512;
 int RX_PROCESS_STACK_DEPTH = 1536;
 int priority[] = {1, 2, 3, 4};
+static constexpr bool kEnableSimulatedLocationSensorTask = true;
 
 SensorData_t sensorData = {0};
 ControlOutput_t controlOutput = {0};
@@ -27,6 +28,7 @@ mavlink_manual_control_t manual_control_data = {};
 mavlink_command_long_t specific_cmds = {};
 mavlink_set_mode_t mode = {};
 volatile uint32_t mavlinkLastManualInputMs = 0U;
+volatile uint32_t mavlinkLastManualInputUs = 0U;
 volatile uint32_t mavlinkManualInputFrameCount = 0U;
 volatile uint8_t mavlinkControlPrintMode = 1U; // 1=armed-only, 2=always
 volatile uint8_t mavlinkVehicleBaseMode =
@@ -35,8 +37,13 @@ volatile uint32_t mavlinkVehicleCustomMode = 0U;
 volatile uint8_t mavlinkVehicleSystemStatus = MAV_STATE_ACTIVE;
 volatile bool mavlinkVehicleArmed = false;
 volatile bool mavlinkGcsPresent = false;
+volatile uint32_t mavlinkLatencyRttLastUs = 0U;
+volatile uint32_t mavlinkLatencyRttAvgUs = 0U;
+volatile uint32_t mavlinkLatencyOneWayAvgUs = 0U;
+volatile uint32_t mavlinkPilotLatencyEstimateUs = 0U;
 QueueHandle_t mavlinkRxQueue900 = nullptr;
 QueueHandle_t mavlinkRxQueue24 = nullptr;
+QueueHandle_t mavlinkQgcHandshakeQueue = nullptr;
 
 // manual
 
@@ -69,11 +76,13 @@ static void InitMavlinkRx()
     // MAVLink RX queues (ensure Serial2/Serial3 are initialized in HardwareInit).
     mavlinkRxQueue900 = xQueueCreate(QUEUE_SIZE, sizeof(MavlinkRxPacket_t));
     mavlinkRxQueue24 = xQueueCreate(QUEUE_SIZE, sizeof(MavlinkRxPacket_t));
+    mavlinkQgcHandshakeQueue = xQueueCreate(QUEUE_SIZE, sizeof(MavlinkRxPacket_t));
 
     xTaskCreate(MavlinkRx900Task, "Rx900", STACK_DEPTH, NULL, *priority + 3, NULL);
     //xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
     //xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
     xTaskCreate(RxMavlinkProcess900PacketTask, "900MhzProces", RX_PROCESS_STACK_DEPTH, NULL, *priority + 2, NULL);
+    xTaskCreate(MavlinkQgcHandshakeTask, "QgcHandshake", RX_PROCESS_STACK_DEPTH, NULL, *priority + 2, NULL);
 }
 
 static void InitLogging()
@@ -93,8 +102,10 @@ static void InitTx()
     // can corrupt MAVLink framing on the same UART.
     // xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority + 2, NULL);
     xTaskCreate(MavlinkHeartbeatTask, "MavHb", STACK_DEPTH, NULL, *priority + 2, NULL);
-    // Latency probe disabled to keep serial output focused on control and heartbeat.
-    // xTaskCreate(MavlinkLatencyProbeTask, "MavLat", STACK_DEPTH, NULL, *priority + 2, NULL);
+    xTaskCreate(MavlinkLatencyProbeTask, "MavLat", STACK_DEPTH, NULL, *priority + 2, NULL);
+    if (kEnableSimulatedLocationSensorTask) {
+        xTaskCreate(MavlinkSimulatedTelemetryTask, "MavSim", RX_PROCESS_STACK_DEPTH, NULL, *priority + 2, NULL);
+    }
 }
 
 // Program Entry Point
