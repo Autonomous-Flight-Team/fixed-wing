@@ -13,6 +13,7 @@ Advik Sharma - github.com/jpyces
 //QueueHandle_t mavlinkRxQueue24  = nullptr;
 volatile uint32_t mavlinkRxDrop900 = 0;
 volatile uint32_t mavlinkRxDrop24  = 0;
+volatile uint32_t mavlinkRxParsed24Count = 0;
 volatile mavlink_message_t mavlinkLastTelemetry = {};
 volatile uint32_t mavlinkTelemetryCount = 0;
 
@@ -72,23 +73,33 @@ void MavlinkRx24Task(void *pvParameters) {
     const TickType_t freq = pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK);
     mavlink_message_t msg;
     mavlink_status_t status;
-    
-    for (;;) {
-        while (MAVLINK_SERIAL_24.available() > 0) {
+
+    for (;;)
+    {
+        // uint32_t time = micros();
+        // Serial.println("Rx24 Task Start");
+        while (MAVLINK_SERIAL_24.available() > 0)
+        {
             uint8_t c = static_cast<uint8_t>(MAVLINK_SERIAL_24.read());
-            if (mavlink_parse_char(MAVLINK_COMM_24, c, &msg, &status)) {
+            // Serial.println("RAWWWW");
+            // Serial.println(MAVLINK_SERIAL_24.read());
+            if (mavlink_parse_char(MAVLINK_COMM_24, c, &msg, &status))
+            {
                 MavlinkRxPacket_t pkt;
                 pkt.link = LINK_24GHZ;
                 pkt.msg = msg;
-
-                xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);  // Writing to global, so need the mutex
-                if (xQueueSend(mavlinkRxQueue24, &pkt, 0) != pdTRUE) {
+                // Serial.println("900 Mhz received!");
+                xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);
+                if (xQueueSend(mavlinkRxQueue24, &pkt, 0) != pdTRUE)
+                {
                     ++mavlinkRxDrop24;
                 }
                 xSemaphoreGive(mavlinkDataMutex);
             }
-            vTaskDelayUntil(&lastWake, freq);
         }
+        // Serial.println("Outside while loop");
+        // Serial.println(micros()-time);
+        vTaskDelayUntil(&lastWake, freq);
     }
 }
 

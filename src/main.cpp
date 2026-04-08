@@ -15,7 +15,8 @@ SemaphoreHandle_t dataMutex, controllerMutex, stateMutex, mavlinkDataMutex;
 int STACK_DEPTH = 512;
 int RX_PROCESS_STACK_DEPTH = 1536;
 int priority[] = {1, 2, 3, 4};
-static constexpr bool kEnableSimulatedLocationSensorTask = true;
+static constexpr bool kEnableSimulatedLocationSensorTask = false;
+static constexpr bool kEnableSerial3LoopbackSelfTestTask = false;
 
 SensorData_t sensorData = {0};
 ControlOutput_t controlOutput = {0};
@@ -79,10 +80,12 @@ static void InitMavlinkRx()
     mavlinkQgcHandshakeQueue = xQueueCreate(QUEUE_SIZE, sizeof(MavlinkRxPacket_t));
 
     xTaskCreate(MavlinkRx900Task, "Rx900", STACK_DEPTH, NULL, *priority + 3, NULL);
-    //xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
-    //xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
+    xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
     xTaskCreate(RxMavlinkProcess900PacketTask, "900MhzProces", RX_PROCESS_STACK_DEPTH, NULL, *priority + 2, NULL);
     xTaskCreate(MavlinkQgcHandshakeTask, "QgcHandshake", RX_PROCESS_STACK_DEPTH, NULL, *priority + 2, NULL);
+    if (kEnableSerial3LoopbackSelfTestTask) {
+        xTaskCreate(Serial3LoopbackSelfTestTask, "Ser3Loop", STACK_DEPTH, NULL, *priority + 1, NULL);
+    }
 }
 
 static void InitLogging()
@@ -113,8 +116,8 @@ static void InitTx()
 void setup()
 {
     Serial.begin(115200);
-    MAVLINK_SERIAL_900.begin(MAVLINK_BAUD);
-    MAVLINK_SERIAL_24.begin(MAVLINK_BAUD);
+    MAVLINK_SERIAL_900.begin(MAVLINK_BAUD_900);
+    MAVLINK_SERIAL_24.begin(MAVLINK_BAUD_24);
 
     // Give PlatformIO monitor time to attach to USB CDC before tasks start logging.
     const uint32_t serialWaitStartMs = millis();

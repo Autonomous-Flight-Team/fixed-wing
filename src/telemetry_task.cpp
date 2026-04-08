@@ -44,6 +44,7 @@ void FillLoggingQueues(Log<mavlink_manual_control_t> log)
 }
 
 void SDCardTask(void *pvParameters){
+    // IMPLEMENT
     (void)pvParameters;
     const TickType_t consumePeriod = pdMS_TO_TICKS(400);
     TickType_t lastWake = xTaskGetTickCount();

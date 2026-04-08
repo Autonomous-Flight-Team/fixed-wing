@@ -21,12 +21,17 @@ extern TinyGPSPlus gps;
 
 #define gpsSerial Serial1
 
+// Separates the UART Data Streams into their own buffers to prevent overlap and corruption
 #define MAVLINK_COMM_900 MAVLINK_COMM_0
 #define MAVLINK_COMM_24 MAVLINK_COMM_1
-inline constexpr uint32_t MAVLINK_BAUD = 460800;
+
+// Both have their own Buads
+inline constexpr uint32_t MAVLINK_BAUD_900 = 460800;
+inline constexpr uint32_t MAVLINK_BAUD_24 = 9600;
 
 // TODO: Update these UARTs to match our wiring
+// Actual Hardware RX-TX references
 #define MAVLINK_SERIAL_900 Serial2
-#define MAVLINK_SERIAL_24 Serial3
+#define MAVLINK_SERIAL_24 Serial3 
 
 #endif

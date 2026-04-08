@@ -27,7 +27,9 @@ void servos_to_neutral()
 
 void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servoStates)
 {
-    servoStates->set_throttle = clamp((servoStates->set_throttle + controllerData->z * throttle_rate), (float)0, throttle_limit);
+    if (mavlinkVehicleArmed == true){
+        servoStates->set_throttle = clamp((servoStates->set_throttle + controllerData->z * throttle_rate), (float)0, throttle_limit);
+    }
     servoStates->set_elevator = clamp(servoStates->set_elevator + controllerData->x * elevator_rate, (float)0, elevator_limit);
     servoStates->set_aileron = clamp(servoStates->set_aileron + controllerData->y * aileron_rate, (float)0, aileron_limit);
     servoStates->set_rudder = clamp(servoStates->set_rudder + controllerData->r * rudder_rate, (float)0, rudder_limit);

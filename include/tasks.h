@@ -24,6 +24,7 @@ extern QueueHandle_t mavlinkRxQueue24;
 extern QueueHandle_t mavlinkQgcHandshakeQueue;
 extern volatile uint32_t mavlinkRxDrop900;
 extern volatile uint32_t mavlinkRxDrop24;
+extern volatile uint32_t mavlinkRxParsed24Count;
 extern QueueHandle_t maxlinkTxQueue900;
 extern volatile mavlink_message_t mavlinkLastTelemetry;
 extern volatile uint32_t mavlinkTelemetryCount;
@@ -90,6 +91,7 @@ void MavlinkTelemetryDispatchTask(void *pvParameters);
 void RxMavlinkProcess900PacketTask(void *pvParameters);
 void MavlinkQgcHandshakeTask(void *pvParameters);
 void MavlinkSimulatedTelemetryTask(void *pvParameters);
+void Serial3LoopbackSelfTestTask(void *pvParameters);
 
 // Manual tasks
 void writeServoTask(void *pvParameters);
