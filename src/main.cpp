@@ -72,23 +72,57 @@ volatile uint32_t manualControl_logging_drop_count = 0;
 
 DroneMode droneMode = MANUAL; // Perhaps use mavlinks version, or update custom mavlink cmd
 
-static void InitMavlinkRx()
+namespace {
+void FailStartup(const char *reason) {
+    Serial.print("[BOOT][FAIL] ");
+    Serial.println(reason);
+    for (;;) {
+        delay(1000);
+    }
+}
+
+bool CreateTaskChecked(TaskFunction_t fn, const char *name, uint16_t stackDepth, UBaseType_t priorityValue) {
+    if (xTaskCreate(fn, name, stackDepth, NULL, priorityValue, NULL) != pdPASS) {
+        Serial.print("[BOOT][FAIL] xTaskCreate failed: ");
+        Serial.println(name);
+        return false;
+    }
+    return true;
+}
+}  // namespace
+
+static bool InitMavlinkRx()
 {
     // MAVLink RX queues (ensure Serial2/Serial3 are initialized in HardwareInit).
     mavlinkRxQueue900 = xQueueCreate(QUEUE_SIZE, sizeof(MavlinkRxPacket_t));
     mavlinkRxQueue24 = xQueueCreate(QUEUE_SIZE, sizeof(MavlinkRxPacket_t));
     mavlinkQgcHandshakeQueue = xQueueCreate(QUEUE_SIZE, sizeof(MavlinkRxPacket_t));
-
-    xTaskCreate(MavlinkRx900Task, "Rx900", STACK_DEPTH, NULL, *priority + 3, NULL);
-    xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
-    xTaskCreate(RxMavlinkProcess900PacketTask, "900MhzProces", RX_PROCESS_STACK_DEPTH, NULL, *priority + 2, NULL);
-    xTaskCreate(MavlinkQgcHandshakeTask, "QgcHandshake", RX_PROCESS_STACK_DEPTH, NULL, *priority + 2, NULL);
-    if (kEnableSerial3LoopbackSelfTestTask) {
-        xTaskCreate(Serial3LoopbackSelfTestTask, "Ser3Loop", STACK_DEPTH, NULL, *priority + 1, NULL);
+    if (mavlinkRxQueue900 == nullptr || mavlinkRxQueue24 == nullptr || mavlinkQgcHandshakeQueue == nullptr) {
+        Serial.println("[BOOT][FAIL] MAVLink queue creation failed");
+        return false;
     }
+
+    if (!CreateTaskChecked(MavlinkRx900Task, "Rx900", STACK_DEPTH, *priority + 3)) {
+        return false;
+    }
+    if (!CreateTaskChecked(MavlinkRx24Task, "Rx24", STACK_DEPTH, *priority + 2)) {
+        return false;
+    }
+    if (!CreateTaskChecked(RxMavlinkProcess900PacketTask, "900MhzProces", RX_PROCESS_STACK_DEPTH, *priority + 2)) {
+        return false;
+    }
+    if (!CreateTaskChecked(MavlinkQgcHandshakeTask, "QgcHandshake", RX_PROCESS_STACK_DEPTH, *priority + 2)) {
+        return false;
+    }
+    if (kEnableSerial3LoopbackSelfTestTask) {
+        if (!CreateTaskChecked(Serial3LoopbackSelfTestTask, "Ser3Loop", STACK_DEPTH, *priority + 1)) {
+            return false;
+        }
+    }
+    return true;
 }
 
-static void InitLogging()
+static bool InitLogging()
 {
     sensorData_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<SensorData_t>));
     controlOutput_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<ControlOutput_t>));
@@ -96,19 +130,35 @@ static void InitLogging()
     manualControl_t_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<mavlink_manual_control_t>));
     sensorData_latest_queue = xQueueCreate(1, sizeof(Log<SensorData_t>));
     stateVector_latest_queue = xQueueCreate(1, sizeof(Log<StateVector_t>));
-    xTaskCreate(SDCardTask, "Logger", STACK_DEPTH, NULL, *priority, NULL);
+    if (sensorData_logging_queue == nullptr ||
+        controlOutput_logging_queue == nullptr ||
+        stateVector_logging_queue == nullptr ||
+        manualControl_t_logging_queue == nullptr ||
+        sensorData_latest_queue == nullptr ||
+        stateVector_latest_queue == nullptr) {
+        Serial.println("[BOOT][FAIL] logging queue creation failed");
+        return false;
+    }
+    return CreateTaskChecked(SDCardTask, "Logger", STACK_DEPTH, *priority);
 }
 
-static void InitTx()
+static bool InitTx()
 {
     // Keep Serial2 MAVLink-only for QGC. GSATxTask writes a raw custom packet and
     // can corrupt MAVLink framing on the same UART.
     // xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority + 2, NULL);
-    xTaskCreate(MavlinkHeartbeatTask, "MavHb", STACK_DEPTH, NULL, *priority + 2, NULL);
-    xTaskCreate(MavlinkLatencyProbeTask, "MavLat", STACK_DEPTH, NULL, *priority + 2, NULL);
-    if (kEnableSimulatedLocationSensorTask) {
-        xTaskCreate(MavlinkSimulatedTelemetryTask, "MavSim", RX_PROCESS_STACK_DEPTH, NULL, *priority + 2, NULL);
+    if (!CreateTaskChecked(MavlinkHeartbeatTask, "MavHb", STACK_DEPTH, *priority + 2)) {
+        return false;
     }
+    if (!CreateTaskChecked(MavlinkLatencyProbeTask, "MavLat", STACK_DEPTH, *priority + 2)) {
+        return false;
+    }
+    if (kEnableSimulatedLocationSensorTask) {
+        if (!CreateTaskChecked(MavlinkSimulatedTelemetryTask, "MavSim", RX_PROCESS_STACK_DEPTH, *priority + 2)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 // Program Entry Point
@@ -129,18 +179,20 @@ void setup()
     pinMode(arduino::LED_BUILTIN, arduino::OUTPUT);
     // digitalWrite(arduino::LED_BUILTIN, arduino::HIGH);
 
-    HardwareInit();
-    intialize_manual_control();
+    if (!HardwareInit()) {
+        FailStartup("HardwareInit failed");
+    }
+    if (!initialize_manual_control()) {
+        FailStartup("initialize_manual_control failed");
+    }
+
     controllerMutex = xSemaphoreCreateMutex();
     stateMutex = xSemaphoreCreateMutex();
     dataMutex = xSemaphoreCreateMutex();
-
-    // Manual controls initialized
-    intialize_manual_control();
-    controllerMutex = xSemaphoreCreateMutex();
-    stateMutex = xSemaphoreCreateMutex();
     mavlinkDataMutex = xSemaphoreCreateMutex();
-    
+    if (controllerMutex == nullptr || stateMutex == nullptr || dataMutex == nullptr || mavlinkDataMutex == nullptr) {
+        FailStartup("mutex creation failed");
+    }
 
     // xTaskCreate Paramenters:
     // pvTaskCode - Pointer to task
@@ -149,22 +201,36 @@ void setup()
     // pvParameters - Parameters passed into task
     // uxPriority - Priority level (lower is more priority)
     // pxCreatedTask - Pointer to task handle
-    xTaskCreate(BlinkTask, "Blink", STACK_DEPTH, NULL, *priority, NULL);
+    if (!CreateTaskChecked(BlinkTask, "Blink", STACK_DEPTH, *priority)) {
+        FailStartup("Blink task creation failed");
+    }
     // xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, *priority + 1, NULL);
     //  xTaskCreate(GPSTask, "GPS", STACK_DEPTH, NULL, *priority + 2, NULL);
     // xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, *priority, NULL);
     // xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);
     //  xTaskCreate(GSARxTask, "GSARx", STACK_DEPTH, NULL, *priority+3, NULL);
     //  xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority+3, NULL);
-    InitLogging();
-    xTaskCreate(LoggingQueueSmokeTestTask, "LogQSmoke", STACK_DEPTH, NULL, *priority, NULL);
-    InitMavlinkRx();
-    InitTx();
+    if (!InitLogging()) {
+        FailStartup("InitLogging failed");
+    }
+    if (!CreateTaskChecked(LoggingQueueSmokeTestTask, "LogQSmoke", STACK_DEPTH, *priority)) {
+        FailStartup("LogQSmoke task creation failed");
+    }
+    if (!InitMavlinkRx()) {
+        FailStartup("InitMavlinkRx failed");
+    }
+    if (!InitTx()) {
+        FailStartup("InitTx failed");
+    }
     Serial.println("[BOOT] starting scheduler");
 
     // manual
-    xTaskCreate(writeServoTask, "ServoWrite", 1024, NULL, 1, NULL);
-    xTaskCreate(updateStatesTask, "States", 1024, NULL, 2, NULL);
+    if (!CreateTaskChecked(writeServoTask, "ServoWrite", 1024, 1)) {
+        FailStartup("ServoWrite task creation failed");
+    }
+    if (!CreateTaskChecked(updateStatesTask, "States", 1024, 2)) {
+        FailStartup("States task creation failed");
+    }
     //xTaskCreate(radioTask, "ReadRadio(RX)", 1024, NULL, 3, NULL); TODO: REPLACE WITH MAVLink tasks
 
     vTaskStartScheduler();

@@ -1,3 +1,8 @@
+/*
+Authors:
+Advik Sharma - github.com/jpyces
+*/
+
 #include "mavlink_latency.h"
 
 #include "tasks.h"

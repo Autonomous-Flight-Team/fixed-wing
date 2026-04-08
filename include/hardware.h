@@ -13,7 +13,7 @@
 #include <TinyGPS++.h>
 
 bool HardwareInit(void);
-bool intialize_manual_control();
+bool initialize_manual_control();
 
 extern ICM_20948_I2C imu;
 extern Adafruit_BMP3XX bmp;

@@ -17,20 +17,6 @@ volatile uint32_t mavlinkRxParsed24Count = 0;
 volatile mavlink_message_t mavlinkLastTelemetry = {};
 volatile uint32_t mavlinkTelemetryCount = 0;
 
-namespace {
-void LockMavlinkData() {
-    if (mavlinkDataMutex != nullptr) {
-        xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);
-    }
-}
-
-void UnlockMavlinkData() {
-    if (mavlinkDataMutex != nullptr) {
-        xSemaphoreGive(mavlinkDataMutex);
-    }
-}
-}  // namespace
-
 
 // Purpose: Parse MAVLink from the 900 MHz UART and enqueue full messages.
 // Structure: Tight read/parse loop + periodic delay to bound CPU usage.

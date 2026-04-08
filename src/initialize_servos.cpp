@@ -6,7 +6,7 @@
 
 void servos_to_neutral();
 
-bool intialize_servo_control()
+bool initialize_servo_control()
 {
     // Set all digital pins to OUTPUT
     pinMode(left_aileron_pin, OUTPUT);
@@ -35,15 +35,7 @@ bool intialize_servo_control()
     return true;
 }
 
-// Initalizes the controller and setStates structs and
-bool initialize_control_memory()
+bool initialize_manual_control()
 {
-    // Possibly initialize a struct here
-
-    return true;
-}
-
-bool intialize_manual_control()
-{
-    return intialize_servo_control() && initialize_control_memory();
+    return initialize_servo_control();
 }
