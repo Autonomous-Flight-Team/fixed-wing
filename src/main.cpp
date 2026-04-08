@@ -108,6 +108,8 @@ static bool InitMavlinkRx()
     if (!CreateTaskChecked(MavlinkRx24Task, "Rx24", STACK_DEPTH, *priority + 2)) {
         return false;
     }
+    // Central MAVLink dispatcher: consumes only 900 MHz RX packets for
+    // control-authoritative state updates and handshake forwarding.
     if (!CreateTaskChecked(RxMavlinkProcess900PacketTask, "900MhzProces", RX_PROCESS_STACK_DEPTH, *priority + 2)) {
         return false;
     }

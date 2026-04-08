@@ -56,6 +56,8 @@ void UpdateManualInputMetadataLocked() {
     ++mavlinkManualInputFrameCount;
 }
 
+// Decodes a small set of MAVLink messages into shared flight-control state.
+// This keeps the RX byte-parser tasks lightweight and puts message semantics here.
 void ProcessPacket(const MavlinkRxPacket_t &pkt) {
     switch (pkt.msg.msgid) {
         case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT: {
@@ -68,11 +70,13 @@ void ProcessPacket(const MavlinkRxPacket_t &pkt) {
         case MAVLINK_MSG_ID_MANUAL_CONTROL: {
             LockMavlinkData();
             mavlink_msg_manual_control_decode(&pkt.msg, &manual_control_data);
+            FillLoggingQueues(manual_control_data);  // Logs manual_control_data
             UpdateManualInputMetadataLocked();
             UnlockMavlinkData();
             break;
         }
 
+        // In case ground control sends raw RC Channel PWM values
         case MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE: {
             mavlink_rc_channels_override_t rc = {};
             mavlink_msg_rc_channels_override_decode(&pkt.msg, &rc);
@@ -112,29 +116,21 @@ void ProcessPacket(const MavlinkRxPacket_t &pkt) {
 void RxMavlinkProcess900PacketTask(void *pvParameters) {
     (void)pvParameters;
 
+    // Control-authoritative path:
+    // Only 900 MHz packets are allowed to influence shared control state and
+    // handshake-driven vehicle state (armed/mode/params).
     MavlinkRxPacket_t pkt = {};
     for (;;) {
-        bool handledPacket = false;
-        for (uint8_t queueIndex = 0U; queueIndex < 2U; ++queueIndex) {
-            QueueHandle_t queueHandle = (queueIndex == 0U) ? mavlinkRxQueue900 : mavlinkRxQueue24;
-            if (queueHandle == nullptr) {
-                continue;
-            }
-
-            if (xQueueReceive(queueHandle, &pkt, 0) != pdTRUE) {
-                continue;
-            }
-
-            handledPacket = true;
-
+        if (mavlinkRxQueue900 != nullptr &&
+            xQueueReceive(mavlinkRxQueue900, &pkt, 0) == pdTRUE) {
+            // Mirror packets to handshake logic (QGC arm/mode/params/mission flow).
             if (mavlinkQgcHandshakeQueue != nullptr) {
                 (void)xQueueSend(mavlinkQgcHandshakeQueue, &pkt, 0);
             }
 
+            // Apply packet effects to shared control state used by heartbeat/servo paths.
             ProcessPacket(pkt);
-        }
-
-        if (!handledPacket) {
+        } else {
             vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
         }
     }
