@@ -32,9 +32,9 @@ constexpr float elevator_limit = 40.0f;
 constexpr float rudder_limit = 60.0f;
 constexpr float throttle_limit = 1.0f;
 
-constexpr float aileron_neutral = aileron_limit / 2;   // 16
-constexpr float elevator_neutral = elevator_limit / 2; // 20
-constexpr float rudder_neutral = rudder_limit / 2;     // 30
+constexpr float aileron_neutral = 15;   // 15
+constexpr float elevator_neutral = 20; // 20
+constexpr float rudder_neutral = 30;  // 30
 
 // Deadzone
 constexpr float DEADZONE = 0.1;

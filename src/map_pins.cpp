@@ -28,8 +28,8 @@ float throttle = 0.0f;
 // Flap/release positions
 int flaps_deployed_loc = 45;
 int flaps_retracted_loc = 0;
-int drone_release_close = 0;
-int drone_release_loc = 180;
+int drone_release_close = 80;
+int drone_release_loc = 120;
 
 // Current locations
 int aileron_loc = aileron_limit / 2;
