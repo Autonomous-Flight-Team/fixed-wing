@@ -31,7 +31,7 @@ void MavlinkRx900Task(void *pvParameters) {
         //Serial.println("Task Start");
         while (MAVLINK_SERIAL_900.available() > 0) {
             uint8_t c = static_cast<uint8_t>(MAVLINK_SERIAL_900.read());
-            //Serial.println("RAWWWW");
+            //Serial.print("RAWWWW: ");
             //Serial.println(MAVLINK_SERIAL_900.read()); 
             if (mavlink_parse_char(MAVLINK_COMM_900, c, &msg, &status))
             {

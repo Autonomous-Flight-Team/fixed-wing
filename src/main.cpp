@@ -15,7 +15,7 @@ SemaphoreHandle_t dataMutex, controllerMutex, stateMutex, mavlinkDataMutex;
 int STACK_DEPTH = 512;
 int RX_PROCESS_STACK_DEPTH = 1536;
 int priority[] = {1, 2, 3, 4};
-static constexpr bool kEnableSimulatedLocationSensorTask = false;
+static constexpr bool kEnableSimulatedLocationSensorTask = true;
 static constexpr bool kEnableSerial3LoopbackSelfTestTask = false;
 
 SensorData_t sensorData = {0};
@@ -181,9 +181,9 @@ void setup()
     pinMode(arduino::LED_BUILTIN, arduino::OUTPUT);
     // digitalWrite(arduino::LED_BUILTIN, arduino::HIGH);
 
-    if (!HardwareInit()) {
+    /*if (!HardwareInit()) {
         FailStartup("HardwareInit failed");
-    }
+    }*/
     if (!initialize_manual_control()) {
         FailStartup("initialize_manual_control failed");
     }
@@ -203,9 +203,10 @@ void setup()
     // pvParameters - Parameters passed into task
     // uxPriority - Priority level (lower is more priority)
     // pxCreatedTask - Pointer to task handle
-    if (!CreateTaskChecked(BlinkTask, "Blink", STACK_DEPTH, *priority)) {
+    /*if (!CreateTaskChecked(BlinkTask, "Blink", STACK_DEPTH, *priority)) {
         FailStartup("Blink task creation failed");
-    }
+    }*/
+    xTaskCreate(BlinkTask, "Blink", STACK_DEPTH, NULL, *priority, NULL);
     // xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, *priority + 1, NULL);
     //  xTaskCreate(GPSTask, "GPS", STACK_DEPTH, NULL, *priority + 2, NULL);
     // xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, *priority, NULL);
