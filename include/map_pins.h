@@ -14,6 +14,7 @@ extern int left_flap_pin;
 extern int throttle_pin;
 extern int control_surface_pin;
 extern int drone_release_pin;
+extern int esc_pin;
 
 // Servos
 extern Servo left_aileron_servo;
@@ -23,6 +24,7 @@ extern Servo rudder_servo;
 extern Servo right_flap_servo;
 extern Servo left_flap_servo;
 extern Servo drone_release_servo;
+extern Servo ESC;
 
 // Limits
 constexpr float aileron_limit = 32.0f;
@@ -30,9 +32,12 @@ constexpr float elevator_limit = 40.0f;
 constexpr float rudder_limit = 60.0f;
 constexpr float throttle_limit = 1.0f;
 
-constexpr float aileron_neutral = aileron_limit / 2;   // 16
-constexpr float elevator_neutral = elevator_limit / 2; // 20
-constexpr float rudder_neutral = rudder_limit / 2;     // 30
+constexpr float aileron_neutral = 15;   // 15
+constexpr float elevator_neutral = 20; // 20
+constexpr float rudder_neutral = 30;  // 30
+
+// Deadzone
+constexpr float DEADZONE = 0.1;
 
 // Flap/release positions
 extern int flaps_deployed_loc;
