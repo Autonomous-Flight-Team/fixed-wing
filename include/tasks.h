@@ -82,6 +82,7 @@ void GSARxTask(void *pvParameters);
 void BlinkTask(void *pvParameters);
 void MavlinkHeartbeatTask(void *pvParameters);
 void MavlinkLatencyProbeTask(void *pvParameters);
+void MavlinkAltitudeTask(void *pvParameters);
 
 // Mavlink Tasks
 void MavlinkRx900Task(void *pvParameters);

@@ -8,18 +8,25 @@ ICM_20948_I2C imu;
 Adafruit_BMP3XX bmp;
 TinyGPSPlus gps;
 
-
+#define IMU_SDA 18
+#define IMU_SCL 19
 
 // Initializes the IMU
 bool ImuInit() {
     Wire.begin();
-    if (imu.begin() != ICM_20948_Stat_Ok) return false;
+    if (imu.begin(Wire,0) != ICM_20948_Stat_Ok) {
+        Serial.println("IMU failed :(");
+        return false;
+    }
     return true;
 }
 
 // Initializes the Barometer
 bool BaroInit() {
-    if (!bmp.begin_I2C()) return false;
+    if (!bmp.begin_I2C()) {
+        Serial.println("Barometer failed :(");
+        return false;
+    }
     return true;
 }
 

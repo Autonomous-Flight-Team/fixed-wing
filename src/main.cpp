@@ -153,6 +153,9 @@ static bool InitTx()
     if (!CreateTaskChecked(MavlinkLatencyProbeTask, "MavLat", STACK_DEPTH, *priority + 2)) {
         return false;
     }
+    if (!CreateTaskChecked(MavlinkAltitudeTask, "MavAlt", STACK_DEPTH, *priority + 2)) {
+        return false;
+    }
     if (kEnableSimulatedLocationSensorTask) {
         if (!CreateTaskChecked(MavlinkSimulatedTelemetryTask, "MavSim", RX_PROCESS_STACK_DEPTH, *priority + 2)) {
             return false;
@@ -204,7 +207,7 @@ void setup()
     if (!CreateTaskChecked(BlinkTask, "Blink", STACK_DEPTH, *priority)) {
         FailStartup("Blink task creation failed");
     }
-    // xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, *priority + 1, NULL);
+    xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, *priority + 1, NULL);
     //  xTaskCreate(GPSTask, "GPS", STACK_DEPTH, NULL, *priority + 2, NULL);
     // xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, *priority, NULL);
     // xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);
