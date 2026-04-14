@@ -19,9 +19,8 @@ void servos_to_neutral()
     right_aileron_servo.write(aileron_neutral);
     elevator_servo.write(elevator_neutral);
     rudder_servo.write(rudder_neutral);
-    right_flap_servo.write(flaps_retracted_loc);
-    left_flap_servo.write(flaps_retracted_loc);
-    drone_release_servo.write(0);
+    flap_servo.write(flaps_retracted_loc);
+    drone_release_servo.write(drone_release_close);
 }
 
 void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servoStates)
@@ -48,43 +47,40 @@ void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servo
     servoStates->set_elevator = clamp(servoStates->set_elevator + controllerData->x * elevator_rate, (float)0, elevator_limit);
     servoStates->set_aileron = clamp(servoStates->set_aileron + controllerData->y * aileron_rate, (float)0, aileron_limit);
     servoStates->set_rudder = clamp(servoStates->set_rudder + controllerData->r * rudder_rate, (float)0, rudder_limit);
-    // Serial.print("Elevator: ");
-    // Serial.println(servoStates->set_elevator);
-    // Serial.print(" Rudder:");
-    // Serial.print(servoStates->set_rudder);
-    // Serial.print(" Aileron:");
-    // Serial.println(servoStates->set_aileron);
 
-    // if (controllerData->Y && !(servoStates->flaps))
-    // {
-    //     servoStates->flaps = true;
-    // }
-    // else if (controllerData->A && servoStates->flaps)
-    // {
-    //     servoStates->flaps = false;
-    // }
+    bool buttonState[16];
+    for (int i = 0; i < 16; i++)
+    {
+        buttonState[i] = (controllerData->buttons >> i) & 1;
+        Serial.print(buttonState[i]);
+    }
+    Serial.println();
 
-    // if (controllerData->X)
-    // {
-    //     servoStates->release_drone = true;
-    // }
+    if (buttonState[2])
+    {
+        servoStates->release_drone = true;
+    }
 
-    // if (controllerData->B)
-    // {
-    //     servoStates->set_aileron = aileron_neutral;
-    //     servoStates->set_rudder = rudder_neutral;
-    //     servoStates->set_elevator = elevator_neutral;
-    // }
+    if (buttonState[1])
+    {
+        servoStates->set_aileron = aileron_neutral;
+        servoStates->set_rudder = rudder_neutral;
+        servoStates->set_elevator = elevator_neutral;
+    }
+
+    if (buttonState[11])
+    {
+        armed = true;
+    }
+
+    if (buttonState[10])
+    {
+        armed = false;
+    }
 }
 
 void set_servos(const SetServoStates_t *servoStates) // currently doesn't set throttle
 {
-    // Serial.print("Elevator:");
-    // Serial.print(servoStates->set_elevator);
-    // Serial.print(" Rudder:");
-    // Serial.print(servoStates->set_rudder);
-    // Serial.println(" Aileron:");
-    // Serial.print(servoStates->set_aileron);
 
     elevator_servo.write(servoStates->set_elevator);
     rudder_servo.write(servoStates->set_rudder);
@@ -93,18 +89,25 @@ void set_servos(const SetServoStates_t *servoStates) // currently doesn't set th
 
     if (servoStates->flaps)
     {
-        left_flap_servo.write(flaps_deployed_loc);
-        right_flap_servo.write(flaps_deployed_loc);
+        flap_servo.write(flaps_deployed_loc);
     }
     else
     {
-        left_flap_servo.write(flaps_retracted_loc);
-        right_flap_servo.write(flaps_retracted_loc);
+        flap_servo.write(flaps_retracted_loc);
     }
 
     if (servoStates->release_drone)
     {
         drone_release_servo.write(drone_release_loc);
+    }
+
+    if (armed)
+    {
+        ESC.write(servoStates->set_throttle * 180);
+    }
+    else
+    {
+        ESC.write(0);
     }
 }
 

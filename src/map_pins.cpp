@@ -5,8 +5,8 @@ int left_aileron_pin = 6;
 int right_aileron_pin = 9;
 int elevator_pin = 37;
 int rudder_pin = 23;
-int right_flap_pin = 29;
-int left_flap_pin = 28;
+int flap_pin = 29;
+
 int throttle_pin = 2;
 int control_surface_pin = 23; // Set control surfaces to neutral button push
 int drone_release_pin = 11;
@@ -18,8 +18,8 @@ Servo left_aileron_servo;
 Servo right_aileron_servo;
 Servo elevator_servo;
 Servo rudder_servo;
-Servo right_flap_servo;
-Servo left_flap_servo;
+Servo flap_servo;
+
 Servo drone_release_servo;
 Servo ESC;
 
