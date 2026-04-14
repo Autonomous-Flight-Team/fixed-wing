@@ -114,27 +114,17 @@ void RxMavlinkProcess900PacketTask(void *pvParameters) {
 
     MavlinkRxPacket_t pkt = {};
     for (;;) {
-        bool handledPacket = false;
-        for (uint8_t queueIndex = 0U; queueIndex < 2U; ++queueIndex) {
-            QueueHandle_t queueHandle = (queueIndex == 0U) ? mavlinkRxQueue900 : mavlinkRxQueue24;
-            if (queueHandle == nullptr) {
-                continue;
-            }
+        if (mavlinkRxQueue900 == nullptr) {
+            vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
+            continue;
+        }
 
-            if (xQueueReceive(queueHandle, &pkt, 0) != pdTRUE) {
-                continue;
-            }
-
-            handledPacket = true;
-
+        if (xQueueReceive(mavlinkRxQueue900, &pkt, 0) == pdTRUE) {
             if (mavlinkQgcHandshakeQueue != nullptr) {
                 (void)xQueueSend(mavlinkQgcHandshakeQueue, &pkt, 0);
             }
-
             ProcessPacket(pkt);
-        }
-
-        if (!handledPacket) {
+        } else {
             vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
         }
     }

@@ -15,7 +15,7 @@ SemaphoreHandle_t dataMutex, controllerMutex, stateMutex, mavlinkDataMutex;
 int STACK_DEPTH = 512;
 int RX_PROCESS_STACK_DEPTH = 1536;
 int priority[] = {1, 2, 3, 4};
-static constexpr bool kEnableSimulatedLocationSensorTask = false;
+static constexpr bool kEnableSimulatedLocationSensorTask = true;
 static constexpr bool kEnableSerial3LoopbackSelfTestTask = false;
 
 SensorData_t sensorData = {0};
@@ -179,9 +179,9 @@ void setup()
     pinMode(arduino::LED_BUILTIN, arduino::OUTPUT);
     // digitalWrite(arduino::LED_BUILTIN, arduino::HIGH);
 
-    if (!HardwareInit()) {
+    /*if (!HardwareInit()) {
         FailStartup("HardwareInit failed");
-    }
+    }*/
     if (!initialize_manual_control()) {
         FailStartup("initialize_manual_control failed");
     }
