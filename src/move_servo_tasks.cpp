@@ -43,7 +43,7 @@ void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servo
         controllerData->r = 0;
     }
 
-    servoStates->set_throttle = clamp((servoStates->set_throttle + controllerData->z * throttle_rate), (float)0, throttle_limit);
+    servoStates->set_throttle = controllerData->z;
     servoStates->set_elevator = clamp(servoStates->set_elevator + controllerData->x * elevator_rate, (float)0, elevator_limit);
     servoStates->set_aileron = clamp(servoStates->set_aileron + controllerData->y * aileron_rate, (float)0, aileron_limit);
     servoStates->set_rudder = clamp(servoStates->set_rudder + controllerData->r * rudder_rate, (float)0, rudder_limit);
@@ -52,16 +52,20 @@ void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servo
     for (int i = 0; i < 16; i++)
     {
         buttonState[i] = (controllerData->buttons >> i) & 1;
-        Serial.print(buttonState[i]);
+        // Serial.print(buttonState[i]);
     }
-    Serial.println();
+    // Serial.println();
 
     if (buttonState[2])
     {
         servoStates->release_drone = true;
     }
+    else
+    {
+        servoStates->release_drone = false;
+    }
 
-    if (buttonState[1])
+    if (buttonState[3])
     {
         servoStates->set_aileron = aileron_neutral;
         servoStates->set_rudder = rudder_neutral;
@@ -71,11 +75,6 @@ void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servo
     if (buttonState[11])
     {
         armed = true;
-    }
-
-    if (buttonState[10])
-    {
-        armed = false;
     }
 }
 
@@ -99,6 +98,12 @@ void set_servos(const SetServoStates_t *servoStates) // currently doesn't set th
     if (servoStates->release_drone)
     {
         drone_release_servo.write(drone_release_loc);
+        Serial.println("Release");
+    }
+    else
+    {
+        drone_release_servo.write(drone_release_close);
+        Serial.println("Close");
     }
 
     if (armed)

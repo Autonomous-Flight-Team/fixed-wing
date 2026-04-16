@@ -35,7 +35,7 @@ constexpr float elevator_neutral = 20; // 20
 constexpr float rudder_neutral = 30;   // 30
 
 // Deadzone
-constexpr float DEADZONE = 0.1;
+constexpr float DEADZONE = 10;
 
 // Flap/release positions
 extern int flaps_deployed_loc;
