@@ -50,7 +50,7 @@ void MavlinkAltitudeTask(void *pvParameters) {
     TickType_t lastWake = xTaskGetTickCount();
 
     for (;;) {
-        Serial.println("Sending altitude packet");
+        //Serial.println("Sending altitude packet");
         const float altitudeM = ReadAltitudeMeters();
         SendAltitudeVfrHud(altitudeM);
         vTaskDelayUntil(&lastWake, period);

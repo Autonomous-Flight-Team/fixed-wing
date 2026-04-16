@@ -98,6 +98,7 @@ void Serial3LoopbackSelfTestTask(void *pvParameters);
 void writeServoTask(void *pvParameters);
 void updateStatesTask(void *pvParameters);
 void radioTask(void *pvParameters);
+void printControllerTask(void *pvParameters);
 
 // Logging task Declarations
 void SDCardTask(void *pvParameters);

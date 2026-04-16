@@ -27,9 +27,12 @@ void servos_to_neutral()
 
 void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servoStates)
 {
-    if (mavlinkVehicleArmed == true){
+    if (mavlinkVehicleArmed == true)
+    {
         servoStates->set_throttle = clamp((servoStates->set_throttle + controllerData->z * throttle_rate), (float)0, throttle_limit);
-    } else {
+    }
+    else
+    {
         servoStates->set_throttle = 0;
     }
     servoStates->set_elevator = clamp(servoStates->set_elevator + controllerData->x * elevator_rate, (float)0, elevator_limit);
@@ -109,6 +112,7 @@ void updateStatesTask(void *pvParameters)
             localController = manual_control_data;
             xSemaphoreGive(mavlinkDataMutex);
         }
+
         if (xSemaphoreTake(stateMutex, portMAX_DELAY))
         {
             set_state(&localController, &servoStateData);
@@ -140,7 +144,8 @@ void writeServoTask(void *pvParameters)
         mavlinkPilotLatencyEstimateUs = oneWayUs + fcAgeUs;
 
         const uint32_t nowMs = millis();
-        if ((nowMs - lastPilotLatencyPrintMs) >= 250U && lastInputUs != 0U && oneWayUs != 0U) {
+        if ((nowMs - lastPilotLatencyPrintMs) >= 250U && lastInputUs != 0U && oneWayUs != 0U)
+        {
             lastPilotLatencyPrintMs = nowMs;
             Serial.print("[MAVLINK][PILOT_LATENCY_ESTIMATE] pilot_end_to_end_estimate_ms=");
             Serial.print(mavlinkPilotLatencyEstimateUs / 1000U);
@@ -149,6 +154,115 @@ void writeServoTask(void *pvParameters)
             Serial.print(" flight_controller_input_age_ms=");
             Serial.println(fcAgeUs / 1000U);
         }
+        vTaskDelayUntil(&lastWake, freq);
+    }
+}
+
+// Testing task
+
+void printControllerTask(void *pvParameters)
+{
+    TickType_t lastWake = xTaskGetTickCount();
+    const TickType_t freq = pdMS_TO_TICKS(5000);
+    for (;;)
+    {
+        mavlink_manual_control_t localController;
+        if (xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY))
+        {
+            localController = manual_control_data;
+            xSemaphoreGive(mavlinkDataMutex);
+        }
+
+        char buf[16];
+
+        Serial.println("=== MANUAL CONTROL DATA ===");
+        Serial.print("target:             ");
+        Serial.println(localController.target);
+        Serial.print("x (pitch):          ");
+        Serial.println(localController.x);
+        Serial.print("y (roll):           ");
+        Serial.println(localController.y);
+        Serial.print("z (thrust):         ");
+        Serial.println(localController.z);
+        Serial.print("r (yaw):            ");
+        Serial.println(localController.r);
+
+        sprintf(buf, "0x%04X", localController.buttons);
+        Serial.print("buttons  (1-16):    ");
+        Serial.println(buf);
+
+        sprintf(buf, "0x%04X", localController.buttons2);
+        Serial.print("buttons2 (17-32):   ");
+        Serial.println(buf);
+
+        sprintf(buf, "0x%02X", localController.enabled_extensions);
+        Serial.print("enabled_extensions: ");
+        Serial.println(buf);
+
+        Serial.print("s (pitch-ext):      ");
+        Serial.println(localController.s);
+        Serial.print("t (roll-ext):       ");
+        Serial.println(localController.t);
+        Serial.print("aux1:               ");
+        Serial.println(localController.aux1);
+        Serial.print("aux2:               ");
+        Serial.println(localController.aux2);
+        Serial.print("aux3:               ");
+        Serial.println(localController.aux3);
+        Serial.print("aux4:               ");
+        Serial.println(localController.aux4);
+        Serial.print("aux5:               ");
+        Serial.println(localController.aux5);
+        Serial.print("aux6:               ");
+        Serial.println(localController.aux6);
+
+        Serial.println("--- Buttons (1-16) ---");
+        for (int i = 0; i < 16; i++)
+        {
+            Serial.print("  Button ");
+            Serial.print(i + 1);
+            Serial.print(": ");
+            Serial.println((localController.buttons >> i) & 1);
+        }
+
+        Serial.println("--- Buttons2 (17-32) ---");
+        for (int i = 0; i < 16; i++)
+        {
+            Serial.print("  Button ");
+            Serial.print(i + 17);
+            Serial.print(": ");
+            Serial.println((localController.buttons2 >> i) & 1);
+        }
+        Serial.println("==================");
+        Serial.println("\n=== CHANGED VALUES ===");
+        static mavlink_manual_control_t lastController = {0};
+
+        for (int i = 0; i < 16; i++)
+        {
+            if (((localController.buttons >> i) & 1) != ((lastController.buttons >> i) & 1))
+            {
+                Serial.print("Button ");
+                Serial.print(i + 1);
+                Serial.print(" changed to ");
+                Serial.println((localController.buttons >> i) & 1);
+            }
+        }
+
+        if (localController.aux1 != lastController.aux1)
+            Serial.println("aux1 changed: " + String(localController.aux1));
+        if (localController.aux2 != lastController.aux2)
+            Serial.println("aux2 changed: " + String(localController.aux2));
+        if (localController.aux3 != lastController.aux3)
+            Serial.println("aux3 changed: " + String(localController.aux3));
+        if (localController.aux4 != lastController.aux4)
+            Serial.println("aux4 changed: " + String(localController.aux4));
+        if (localController.aux5 != lastController.aux5)
+            Serial.println("aux5 changed: " + String(localController.aux5));
+        if (localController.aux6 != lastController.aux6)
+            Serial.println("aux6 changed: " + String(localController.aux6));
+
+        lastController = localController;
+
         vTaskDelayUntil(&lastWake, freq);
     }
 }

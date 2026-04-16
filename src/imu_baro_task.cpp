@@ -46,8 +46,8 @@ void ImuBaroTask(void *pvParameters) {
     for (;;) {
         SensorData_t newData = ReadImuBaro();
         if (xSemaphoreTake(dataMutex, portMAX_DELAY)) {
-            Serial.print("altitude: ");
-            Serial.println(newData.altitude);
+            // Serial.print("altitude: ");
+            // Serial.println(newData.altitude);
             sensorData = newData;
 
             xSemaphoreGive(dataMutex);
