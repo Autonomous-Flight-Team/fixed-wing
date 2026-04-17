@@ -17,6 +17,7 @@ extern StateVector_t stateVector;
 extern SemaphoreHandle_t dataMutex;
 extern BlinkState_t blinkState;
 extern SemaphoreHandle_t mavlinkDataMutex;
+extern SemaphoreHandle_t mavlinkTxMutex;
 
 // Mavlink recieve shit
 extern QueueHandle_t mavlinkRxQueue900;
@@ -109,6 +110,9 @@ void FillLoggingQueues(Log<StateVector_t> log);
 void FillLoggingQueues(Log<SensorData_t> log);
 void FillLoggingQueues(Log<ControlOutput_t> log);
 void FillLoggingQueues(Log<mavlink_manual_control_t> log);
+
+// Serial2 MAVLink TX must be serialized across tasks to prevent frame interleaving.
+void MavlinkSerial900Write(const uint8_t *data, uint16_t len);
 
 // Templated functions need to be in header files in order to be accessible and
 // proper linking

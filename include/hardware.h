@@ -27,7 +27,7 @@ extern TinyGPSPlus gps;
 
 // Both have their own Buads
 inline constexpr uint32_t MAVLINK_BAUD_900 = 460800;
-inline constexpr uint32_t MAVLINK_BAUD_24 = 9600;
+inline constexpr uint32_t MAVLINK_BAUD_24 = 115200;
 
 // TODO: Update these UARTs to match our wiring
 // Actual Hardware RX-TX references

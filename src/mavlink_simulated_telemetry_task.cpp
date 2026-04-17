@@ -41,7 +41,7 @@ struct ManualInputSnapshot {
 void SendMavlinkMessage(const mavlink_message_t &msg) {
     uint8_t buffer[MAVLINK_MAX_PACKET_LEN] = {};
     const uint16_t len = mavlink_msg_to_send_buffer(buffer, &msg);
-    MAVLINK_SERIAL_900.write(buffer, len);
+    MavlinkSerial900Write(buffer, len);
 }
 
 float Clampf(float value, float minValue, float maxValue) {

@@ -28,7 +28,7 @@ void GSATxTask(void *pvParameters) {
             tx.sensor = sensorLog.data;
         }
 
-        MAVLINK_SERIAL_900.write((uint8_t *)&tx, sizeof(tx));
+        MavlinkSerial900Write(reinterpret_cast<const uint8_t *>(&tx), sizeof(tx));
         vTaskDelayUntil(&lastWake, freq);
     }
 }

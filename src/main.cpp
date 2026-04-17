@@ -10,7 +10,9 @@
 #include <task.h>
 
 #define QUEUE_SIZE 100
-SemaphoreHandle_t dataMutex, controllerMutex, stateMutex, mavlinkDataMutex;
+SemaphoreHandle_t dataMutex, controllerMutex, stateMutex, mavlinkDataMutex, mavlinkTxMutex;
+// mavlinkTxMutex protects the actual UART line to prevent multiple tasks from writing at the same time
+//      and forces single frame writes at a time
 
 int STACK_DEPTH = 512;
 int RX_PROCESS_STACK_DEPTH = 1536;
@@ -152,6 +154,7 @@ static bool InitLogging()
         Serial.println("[BOOT][FAIL] logging queue creation failed");
         return false;
     }
+
     return CreateTaskChecked(SDCardTask, "Logger", STACK_DEPTH, *priority);
 }
 
@@ -212,7 +215,12 @@ void setup()
     stateMutex = xSemaphoreCreateMutex();
     dataMutex = xSemaphoreCreateMutex();
     mavlinkDataMutex = xSemaphoreCreateMutex();
-    if (controllerMutex == nullptr || stateMutex == nullptr || dataMutex == nullptr || mavlinkDataMutex == nullptr)
+    mavlinkTxMutex = xSemaphoreCreateMutex();
+    if (controllerMutex == nullptr ||
+        stateMutex == nullptr ||
+        dataMutex == nullptr ||
+        mavlinkDataMutex == nullptr ||
+        mavlinkTxMutex == nullptr)
     {
         FailStartup("mutex creation failed");
     }
