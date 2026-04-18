@@ -71,13 +71,20 @@ void SDCardTask(void *pvParameters){
     const TickType_t consumePeriod = pdMS_TO_TICKS(400);
     TickType_t lastWake = xTaskGetTickCount();
 
+    Log<SensorData_t> sensorLog = {};
+    Log<IMUData_t> imuLog = {};
+
     Log<ControlOutput_t> controlLog = {};
     Log<StateVector_t> stateLog = {};
     Log<mavlink_manual_control_t> manualLog = {};
 
     for (;;)
     {
+        File dataFile = SD.open("log_TODOADDTIME.txt", FILE_WRITE);
         // Simulate slow SD card writes by draining each queue once per cycle.
+        if ()
+
+
         if (controlOutput_logging_queue != nullptr) {
             (void)xQueueReceive(controlOutput_logging_queue, &controlLog, 0);
         }
@@ -87,7 +94,7 @@ void SDCardTask(void *pvParameters){
         if (manualControl_t_logging_queue != nullptr) {
             (void)xQueueReceive(manualControl_t_logging_queue, &manualLog, 0);
         }
-
+        dataFile.close();
         vTaskDelayUntil(&lastWake, consumePeriod);
     }
 }

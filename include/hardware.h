@@ -11,6 +11,7 @@
 #include <Adafruit_BMP3XX.h>
 #include <HardwareSerial.h>
 #include <TinyGPS++.h>
+#include <SD.h>
 
 bool HardwareInit(void);
 bool initialize_manual_control();
