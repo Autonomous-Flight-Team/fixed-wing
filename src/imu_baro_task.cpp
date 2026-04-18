@@ -30,26 +30,15 @@ void ReadBaro(SensorData_t *data) {
     data -> temp = bmp.readTemperature();
 }
 
-// Combines IMU and Barometer data into a single data structure
-SensorData_t ReadImuBaro() {
-    SensorData_t data = {0};
-    ReadIMU(&data); 
-    ReadBaro(&data);
-    return data;
-}
-
 // Gets IMU and Barometer data, 
 void ImuBaroTask(void *pvParameters) {
     TickType_t lastWake = xTaskGetTickCount();
     const TickType_t freq = pdMS_TO_TICKS(MS_PER_TICK);
     
     for (;;) {
-        SensorData_t newData = ReadImuBaro();
         if (xSemaphoreTake(dataMutex, portMAX_DELAY)) {
-            // Serial.print("ax: ");
-            // Serial.println(newData.ax);
-            sensorData = newData;
-
+            ReadIMU(&sensorData);
+            ReadBaro(&sensorData);
             xSemaphoreGive(dataMutex);
         }
         vTaskDelayUntil(&lastWake, freq);
