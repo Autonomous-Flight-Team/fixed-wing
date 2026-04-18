@@ -63,6 +63,19 @@ typedef struct
 
 typedef struct
 {
+    // GPS
+    // Latitude
+    double lat;
+    // Longitude
+    double lon;
+    float gps_altitude;
+    // Linear Velocity
+    float vs;
+} GPSData_t;
+
+
+typedef struct
+{
     // IMU
     // Linear Acceleration
     float ax, ay, az;
