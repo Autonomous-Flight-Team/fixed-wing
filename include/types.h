@@ -73,6 +73,8 @@ typedef struct
     float vs;
 } GPSData_t;
 
+typedef struct {} PitotData_t;
+
 
 typedef struct
 {
