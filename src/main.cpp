@@ -21,6 +21,8 @@ static constexpr bool kEnableSimulatedLocationSensorTask = true;
 static constexpr bool kEnableSerial3LoopbackSelfTestTask = false;
 
 SensorData_t sensorData = {0};
+IMUData_t imuData = {0};
+BaroData_t baroData = {0};
 ControlOutput_t controlOutput = {0};
 StateVector_t stateVector = {0};
 BlinkState_t blinkState = {false};
