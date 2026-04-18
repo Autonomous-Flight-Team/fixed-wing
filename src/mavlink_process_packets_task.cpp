@@ -68,6 +68,7 @@ void ProcessPacket(const MavlinkRxPacket_t &pkt) {
         case MAVLINK_MSG_ID_MANUAL_CONTROL: {
             LockMavlinkData();
             mavlink_msg_manual_control_decode(&pkt.msg, &manual_control_data);
+            ConstructLogAndFillQueue(manual_control_data);
             UpdateManualInputMetadataLocked();
             UnlockMavlinkData();
             break;

@@ -117,7 +117,7 @@ void MavlinkSerial900Write(const uint8_t *data, uint16_t len);
 // Templated functions need to be in header files in order to be accessible and
 // proper linking
 template <typename T>
-inline void ConstructLog(const T &data)
+inline void ConstructLogAndFillQueue(const T &data)
 {
     Log<T> log(data);
     log.timestamp = xTaskGetTickCount();
