@@ -140,17 +140,20 @@ static bool InitMavlinkRx()
 
 static bool InitLogging()
 {
-    sensorData_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<SensorData_t>));
     controlOutput_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<ControlOutput_t>));
     stateVector_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<StateVector_t>));
     manualControl_t_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<mavlink_manual_control_t>));
-    sensorData_latest_queue = xQueueCreate(1, sizeof(Log<SensorData_t>));
+
+    // Sensor logging queues
+    imu_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<IMUData_t>));
+    barometer_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<BaroData_t>));
+    gps_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<GPSData_t>));
+    pitotTube_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<PitotData_t>));
+
     stateVector_latest_queue = xQueueCreate(1, sizeof(Log<StateVector_t>));
-    if (sensorData_logging_queue == nullptr ||
-        controlOutput_logging_queue == nullptr ||
+    if (controlOutput_logging_queue == nullptr ||
         stateVector_logging_queue == nullptr ||
         manualControl_t_logging_queue == nullptr ||
-        sensorData_latest_queue == nullptr ||
         stateVector_latest_queue == nullptr)
     {
         Serial.println("[BOOT][FAIL] logging queue creation failed");
