@@ -19,16 +19,6 @@ void FillLoggingQueues(Log<StateVector_t> log)
     }
 }
 
-void FillLoggingQueues(Log<SensorData_t> log)
-{
-    if (xQueueSend(sensorData_logging_queue, &log, 0) != pdTRUE) {
-        ++sensorData_logging_drop_count;
-    }
-    if (sensorData_latest_queue != nullptr) {
-        xQueueOverwrite(sensorData_latest_queue, &log);
-    }
-}
-
 void FillLoggingQueues(Log<IMUData_t> log)
 {
     if (xQueueSend(imu_logging_queue, &log, 0) != pdTRUE)
@@ -81,7 +71,6 @@ void SDCardTask(void *pvParameters){
     const TickType_t consumePeriod = pdMS_TO_TICKS(400);
     TickType_t lastWake = xTaskGetTickCount();
 
-    Log<SensorData_t> sensorLog = {};
     Log<ControlOutput_t> controlLog = {};
     Log<StateVector_t> stateLog = {};
     Log<mavlink_manual_control_t> manualLog = {};
@@ -89,9 +78,6 @@ void SDCardTask(void *pvParameters){
     for (;;)
     {
         // Simulate slow SD card writes by draining each queue once per cycle.
-        if (sensorData_logging_queue != nullptr) {
-            (void)xQueueReceive(sensorData_logging_queue, &sensorLog, 0);
-        }
         if (controlOutput_logging_queue != nullptr) {
             (void)xQueueReceive(controlOutput_logging_queue, &controlLog, 0);
         }

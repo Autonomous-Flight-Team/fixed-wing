@@ -56,11 +56,9 @@ inline constexpr uint8_t MAVLINK_SYSTEM_ID = 10U;
 inline constexpr uint8_t MAVLINK_COMPONENT_ID = MAV_COMP_ID_AUTOPILOT1;
 
 // Logging
-extern QueueHandle_t sensorData_logging_queue;
 extern QueueHandle_t controlOutput_logging_queue;
 extern QueueHandle_t stateVector_logging_queue;
 extern QueueHandle_t manualControl_t_logging_queue;
-extern QueueHandle_t sensorData_latest_queue;
 extern QueueHandle_t stateVector_latest_queue;
 
 extern QueueHandle_t imu_logging_queue;
@@ -68,7 +66,6 @@ extern QueueHandle_t barometer_logging_queue;
 extern QueueHandle_t gps_logging_queue;
 extern QueueHandle_t pitotTube_logging_queue;
 
-extern volatile uint32_t sensorData_logging_drop_count;
 extern volatile uint32_t controlOutput_logging_drop_count;
 extern volatile uint32_t stateVector_logging_drop_count;
 extern volatile uint32_t manualControl_logging_drop_count;
@@ -119,7 +116,6 @@ void LoggingQueueSmokeTestTask(void *pvParameters);
 template <typename T>
 void FillLoggingQueues(Log<T> log) = delete;
 void FillLoggingQueues(Log<StateVector_t> log);
-void FillLoggingQueues(Log<SensorData_t> log);
 void FillLoggingQueues(Log<IMUData_t> log);
 void FillLoggingQueues(Log<BaroData_t> log);
 void FillLoggingQueues(Log<GPSData_t> log);
