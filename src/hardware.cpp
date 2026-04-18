@@ -14,7 +14,7 @@ TinyGPSPlus gps;
 // Initializes the IMU
 bool ImuInit() {
     Wire.begin();
-    if (imu.begin(Wire,0) != ICM_20948_Stat_Ok) {
+    if (imu.begin(Wire) != ICM_20948_Stat_Ok) {
         Serial.println("IMU failed :(");
         return false;
     }

@@ -33,7 +33,7 @@ void ReadBaro(SensorData_t *data) {
 // Combines IMU and Barometer data into a single data structure
 SensorData_t ReadImuBaro() {
     SensorData_t data = {0};
-    // ReadIMU(&data); 
+    ReadIMU(&data); 
     ReadBaro(&data);
     return data;
 }
@@ -46,8 +46,8 @@ void ImuBaroTask(void *pvParameters) {
     for (;;) {
         SensorData_t newData = ReadImuBaro();
         if (xSemaphoreTake(dataMutex, portMAX_DELAY)) {
-            // Serial.print("altitude: ");
-            // Serial.println(newData.altitude);
+            // Serial.print("ax: ");
+            // Serial.println(newData.ax);
             sensorData = newData;
 
             xSemaphoreGive(dataMutex);

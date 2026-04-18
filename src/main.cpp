@@ -203,11 +203,11 @@ void setup()
     pinMode(arduino::LED_BUILTIN, arduino::OUTPUT);
     // digitalWrite(arduino::LED_BUILTIN, arduino::HIGH);
 
-    /*if (!HardwareInit()) {
-        FailStartup("HardwareInit failed");
-    }*/
-    if (!initialize_manual_control())
-    {
+    // if (!HardwareInit()) {
+    //     FailStartup("HardwareInit failed");
+    // }
+    HardwareInit();
+    if (!initialize_manual_control()) {
         FailStartup("initialize_manual_control failed");
     }
 
