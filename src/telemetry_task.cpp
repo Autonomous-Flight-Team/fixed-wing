@@ -29,6 +29,38 @@ void FillLoggingQueues(Log<SensorData_t> log)
     }
 }
 
+void FillLoggingQueues(Log<IMUData_t> log)
+{
+    if (xQueueSend(imu_logging_queue, &log, 0) != pdTRUE)
+    {
+        ++imu_logging_drop_count;
+    }
+}
+
+void FillLoggingQueues(Log<BaroData_t> log)
+{
+    if (xQueueSend(barometer_logging_queue, &log, 0) != pdTRUE)
+    {
+        ++barometer_logging_drop_count;
+    }
+}
+
+void FillLoggingQueues(Log<GPSData_t> log)
+{
+    if (xQueueSend(gps_logging_queue, &log, 0) != pdTRUE)
+    {
+        ++gps_logging_drop_count;
+    }
+}
+
+void FillLoggingQueues(Log<PitotData_t> log)
+{
+    if (xQueueSend(pitotTube_logging_queue, &log, 0) != pdTRUE)
+    {
+        ++pitotTube_logging_drop_count;
+    }
+}
+
 void FillLoggingQueues(Log<ControlOutput_t> log)
 {
     if (xQueueSend(controlOutput_logging_queue, &log, 0) != pdTRUE) {

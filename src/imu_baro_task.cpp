@@ -20,7 +20,7 @@ void ReadIMU(IMUData_t *data) {
         data -> gx = imu.gyrX();
         data -> gy = imu.gyrY();
         data -> gz = imu.gyrZ();
-        ConstructLogAndFillQueue(data);
+        ConstructLogAndFillQueue(*data);
     }
 }
 
@@ -29,7 +29,7 @@ void ReadBaro(BaroData_t *data) {
     data -> altitude = bmp.readAltitude(SEA_LEVEL_PRESSURE);
     data -> pressure = bmp.readPressure();
     data -> temp = bmp.readTemperature();
-    ConstructLogAndFillQueue(data);
+    ConstructLogAndFillQueue(*data);
 }
 
 // Gets IMU and Barometer data, 

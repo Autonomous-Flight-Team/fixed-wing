@@ -69,10 +69,22 @@ QueueHandle_t stateVector_logging_queue = nullptr;
 QueueHandle_t manualControl_t_logging_queue = nullptr;
 QueueHandle_t sensorData_latest_queue = nullptr;
 QueueHandle_t stateVector_latest_queue = nullptr;
+
+// Sensor Logging Queues
+QueueHandle_t imu_logging_queue;
+QueueHandle_t barometer_logging_queue;
+QueueHandle_t gps_logging_queue;
+QueueHandle_t pitotTube_logging_queue;
+
+// Queue Drop Trackers
 volatile uint32_t sensorData_logging_drop_count = 0;
 volatile uint32_t controlOutput_logging_drop_count = 0;
 volatile uint32_t stateVector_logging_drop_count = 0;
 volatile uint32_t manualControl_logging_drop_count = 0;
+volatile uint32_t imu_logging_drop_count = 0;
+volatile uint32_t barometer_logging_drop_count = 0;
+volatile uint32_t gps_logging_drop_count = 0;
+volatile uint32_t pitotTube_logging_drop_count = 0;
 
 DroneMode droneMode = MANUAL; // Perhaps use mavlinks version, or update custom mavlink cmd
 
@@ -140,9 +152,12 @@ static bool InitMavlinkRx()
 
 static bool InitLogging()
 {
+    sensorData_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<SensorData_t>));
     controlOutput_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<ControlOutput_t>));
     stateVector_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<StateVector_t>));
     manualControl_t_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<mavlink_manual_control_t>));
+    sensorData_latest_queue = xQueueCreate(1, sizeof(Log<SensorData_t>));
+    stateVector_latest_queue = xQueueCreate(1, sizeof(Log<StateVector_t>));
 
     // Sensor logging queues
     imu_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<IMUData_t>));
@@ -150,11 +165,16 @@ static bool InitLogging()
     gps_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<GPSData_t>));
     pitotTube_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<PitotData_t>));
 
-    stateVector_latest_queue = xQueueCreate(1, sizeof(Log<StateVector_t>));
-    if (controlOutput_logging_queue == nullptr ||
+    if (sensorData_logging_queue == nullptr ||
+        controlOutput_logging_queue == nullptr ||
         stateVector_logging_queue == nullptr ||
         manualControl_t_logging_queue == nullptr ||
-        stateVector_latest_queue == nullptr)
+        sensorData_latest_queue == nullptr ||
+        stateVector_latest_queue == nullptr ||
+        imu_logging_queue == nullptr || 
+        barometer_logging_queue == nullptr || 
+        gps_logging_queue == nullptr || 
+        pitotTube_logging_queue == nullptr)
     {
         Serial.println("[BOOT][FAIL] logging queue creation failed");
         return false;
