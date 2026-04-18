@@ -82,7 +82,22 @@ void SDCardTask(void *pvParameters){
     {
         File dataFile = SD.open("log_TODOADDTIME.txt", FILE_WRITE);
         // Simulate slow SD card writes by draining each queue once per cycle.
-        if ()
+        if (imu_logging_queue != nullptr) {
+        xQueueReceive(imu_logging_queue, &imuLog, 0);
+        dataFile.print("ax: ");
+        dataFile.println(imuLog.data.ax);
+        dataFile.print("ay: ");
+        dataFile.println(imuLog.data.ay);
+        dataFile.print("az: ");
+        dataFile.println(imuLog.data.az);
+        // Serial.print("ax: ");
+        // Serial.println(imuLog.data.ax);
+        // Serial.print("ay: ");
+        // Serial.println(imuLog.data.ay);
+        // Serial.print("az: ");
+        // Serial.println(imuLog.data.az);
+
+        } 
 
 
         if (controlOutput_logging_queue != nullptr) {
