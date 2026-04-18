@@ -47,6 +47,22 @@ struct Log
 
 typedef struct
 {
+    // Linear Acceleration
+    float ax, ay, az;
+    // Rotational Velocity
+    float gx, gy, gz;
+} IMUData_t;
+
+typedef struct
+{
+    // Barometer
+    float altitude;
+    float pressure;
+    float temp;
+} BaroData_t;
+
+typedef struct
+{
     // IMU
     // Linear Acceleration
     float ax, ay, az;

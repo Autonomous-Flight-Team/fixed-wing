@@ -12,6 +12,8 @@
 
 // Makes the variables declared in the respective files global
 extern SensorData_t sensorData;
+extern IMUData_t imuData;
+extern BaroData_t baroData;
 extern ControlOutput_t controlOutput;
 extern StateVector_t stateVector;
 extern SemaphoreHandle_t dataMutex;
