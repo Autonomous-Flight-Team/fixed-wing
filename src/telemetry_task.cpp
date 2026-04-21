@@ -82,8 +82,6 @@ void SDCardTask(void *pvParameters){
     {
         File dataFile = SD.open("log_TODOADDTIME.txt", FILE_WRITE);
         // Simulate slow SD card writes by draining each queue once per cycle.
-        if ()
-
 
         if (controlOutput_logging_queue != nullptr) {
             (void)xQueueReceive(controlOutput_logging_queue, &controlLog, 0);
