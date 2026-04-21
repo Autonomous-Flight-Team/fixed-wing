@@ -25,7 +25,6 @@ extern SemaphoreHandle_t mavlinkTxMutex;
 extern QueueHandle_t mavlinkRxQueue900;
 extern QueueHandle_t mavlinkRxQueue24;
 extern QueueHandle_t mavlinkQgcHandshakeQueue;
-extern QueueHandle_t mavlinkRx24_QuadcopterOrigin_ForwardQueue;
 extern volatile uint32_t mavlinkRxDrop900;
 extern volatile uint32_t mavlinkRxDrop24;
 extern volatile uint32_t mavlinkRxParsed24Count;

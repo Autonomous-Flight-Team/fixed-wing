@@ -49,7 +49,6 @@ volatile uint32_t mavlinkPilotLatencyEstimateUs = 0U;
 QueueHandle_t mavlinkRxQueue900 = nullptr;
 QueueHandle_t mavlinkRxQueue24 = nullptr;
 QueueHandle_t mavlinkQgcHandshakeQueue = nullptr;
-QueueHandle_t mavlinkRx24_QuadcopterOrigin_ForwardQueue = nullptr;
 
 // manual
 
@@ -116,12 +115,7 @@ static bool InitMavlinkRx()
     mavlinkRxQueue900 = xQueueCreate(QUEUE_SIZE, sizeof(MavlinkRxPacket_t));
     mavlinkRxQueue24 = xQueueCreate(QUEUE_SIZE, sizeof(MavlinkRxPacket_t));
     mavlinkQgcHandshakeQueue = xQueueCreate(QUEUE_SIZE, sizeof(MavlinkRxPacket_t));
-    mavlinkRx24_QuadcopterOrigin_ForwardQueue = xQueueCreate(QUEUE_SIZE, sizeof(MavlinkRxPacket_t));
-
-    if (mavlinkRxQueue900 == nullptr ||
-        mavlinkRxQueue24 == nullptr ||
-        mavlinkQgcHandshakeQueue == nullptr ||
-        mavlinkRx24_QuadcopterOrigin_ForwardQueue == nullptr)
+    if (mavlinkRxQueue900 == nullptr || mavlinkRxQueue24 == nullptr || mavlinkQgcHandshakeQueue == nullptr)
     {
         Serial.println("[BOOT][FAIL] MAVLink queue creation failed");
         return false;

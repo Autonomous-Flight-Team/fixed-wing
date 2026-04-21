@@ -130,21 +130,3 @@ void RxMavlinkProcess900PacketTask(void *pvParameters) {
         }
     }
 }
-
-void RxMavlinkProcess24PacketTask(void *pvParameters){
-    (void) pvParameters;
-
-    MavlinkRxPacket_t pkt = {};
-    for (;;) {
-        if (mavlinkRxQueue24 == nullptr){
-            vTaskDelay(RX_FAST_MS_PER_TICK);
-            continue;
-        }
-
-        if (xQueueReceive(mavlinkRxQueue24, &pkt, 0) == pdTRUE){
-            xQueueSend(mavlinkRx24_QuadcopterOrigin_ForwardQueue, &pkt, 0);
-        } else {
-            vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
-        }
-    }
-}

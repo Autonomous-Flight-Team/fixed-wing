@@ -23,51 +23,6 @@ QgcParamDef gQgcParamTable[] = {
     {"SYSID_THISMAV", static_cast<float>(MAVLINK_SYSTEM_ID), MAV_PARAM_TYPE_UINT8},
     {"MAV_TYPE", static_cast<float>(MAV_TYPE_FIXED_WING), MAV_PARAM_TYPE_UINT8},
     {"ARMING_CHECK", 0.0f, MAV_PARAM_TYPE_INT32},
-    {"COM_RC_IN_MODE", 0.0f, MAV_PARAM_TYPE_INT32},
-    {"RCMAP_ROLL", 1.0f, MAV_PARAM_TYPE_INT32},
-    {"RCMAP_PITCH", 2.0f, MAV_PARAM_TYPE_INT32},
-    {"RCMAP_THROTTLE", 3.0f, MAV_PARAM_TYPE_INT32},
-    {"RCMAP_YAW", 4.0f, MAV_PARAM_TYPE_INT32},
-    {"RC_MAP_ROLL", 1.0f, MAV_PARAM_TYPE_INT32},
-    {"RC_MAP_PITCH", 2.0f, MAV_PARAM_TYPE_INT32},
-    {"RC_MAP_THROTTLE", 3.0f, MAV_PARAM_TYPE_INT32},
-    {"RC_MAP_YAW", 4.0f, MAV_PARAM_TYPE_INT32},
-    {"RC1_MIN", 1000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC1_TRIM", 1500.0f, MAV_PARAM_TYPE_INT32},
-    {"RC1_MAX", 2000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC1_REV", 1.0f, MAV_PARAM_TYPE_INT32},
-    {"RC1_DZ", 30.0f, MAV_PARAM_TYPE_INT32},
-    {"RC2_MIN", 1000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC2_TRIM", 1500.0f, MAV_PARAM_TYPE_INT32},
-    {"RC2_MAX", 2000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC2_REV", 1.0f, MAV_PARAM_TYPE_INT32},
-    {"RC2_DZ", 30.0f, MAV_PARAM_TYPE_INT32},
-    {"RC3_MIN", 1000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC3_TRIM", 1000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC3_MAX", 2000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC3_REV", 1.0f, MAV_PARAM_TYPE_INT32},
-    {"RC3_DZ", 30.0f, MAV_PARAM_TYPE_INT32},
-    {"RC4_MIN", 1000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC4_TRIM", 1500.0f, MAV_PARAM_TYPE_INT32},
-    {"RC4_MAX", 2000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC4_REV", 1.0f, MAV_PARAM_TYPE_INT32},
-    {"RC4_DZ", 30.0f, MAV_PARAM_TYPE_INT32},
-    {"RC5_MIN", 1000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC5_TRIM", 1500.0f, MAV_PARAM_TYPE_INT32},
-    {"RC5_MAX", 2000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC5_REV", 1.0f, MAV_PARAM_TYPE_INT32},
-    {"RC6_MIN", 1000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC6_TRIM", 1500.0f, MAV_PARAM_TYPE_INT32},
-    {"RC6_MAX", 2000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC6_REV", 1.0f, MAV_PARAM_TYPE_INT32},
-    {"RC7_MIN", 1000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC7_TRIM", 1500.0f, MAV_PARAM_TYPE_INT32},
-    {"RC7_MAX", 2000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC7_REV", 1.0f, MAV_PARAM_TYPE_INT32},
-    {"RC8_MIN", 1000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC8_TRIM", 1500.0f, MAV_PARAM_TYPE_INT32},
-    {"RC8_MAX", 2000.0f, MAV_PARAM_TYPE_INT32},
-    {"RC8_REV", 1.0f, MAV_PARAM_TYPE_INT32},
     {"QGC_SPOOF", 1.0f, MAV_PARAM_TYPE_INT32},
 };
 constexpr int16_t kQgcParamCount = static_cast<int16_t>(sizeof(gQgcParamTable) / sizeof(gQgcParamTable[0]));
@@ -108,11 +63,8 @@ void SendAutopilotVersion(uint8_t targetSystem, uint8_t targetComponent) {
     mavlink_message_t msg = {};
     mavlink_autopilot_version_t version = {};
 
-    // Advertise the core protocol features this firmware already handles.
-    version.capabilities = MAV_PROTOCOL_CAPABILITY_PARAM_FLOAT |
-                           MAV_PROTOCOL_CAPABILITY_PARAM_ENCODE_C_CAST |
-                           MAV_PROTOCOL_CAPABILITY_MISSION_INT |
-                           MAV_PROTOCOL_CAPABILITY_SET_POSITION_TARGET_GLOBAL_INT;
+    // Keep handshake metadata zeroed for QGC-facing test mode.
+    version.capabilities = 0U;
     version.flight_sw_version = 0U;
     version.middleware_sw_version = 0U;
     version.os_sw_version = 0U;
