@@ -71,8 +71,8 @@ static void InitMavlinkRx()
     mavlinkRxQueue24 = xQueueCreate(QUEUE_SIZE, sizeof(MavlinkRxPacket_t));
 
     xTaskCreate(MavlinkRx900Task, "Rx900", STACK_DEPTH, NULL, *priority + 3, NULL);
-    //xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
-    //xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
+    // xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
+    // xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
     xTaskCreate(RxMavlinkProcess900PacketTask, "900MhzProces", RX_PROCESS_STACK_DEPTH, NULL, *priority + 2, NULL);
 }
 
@@ -126,7 +126,6 @@ void setup()
     controllerMutex = xSemaphoreCreateMutex();
     stateMutex = xSemaphoreCreateMutex();
     mavlinkDataMutex = xSemaphoreCreateMutex();
-    
 
     // xTaskCreate Paramenters:
     // pvTaskCode - Pointer to task
@@ -136,22 +135,22 @@ void setup()
     // uxPriority - Priority level (lower is more priority)
     // pxCreatedTask - Pointer to task handle
     xTaskCreate(BlinkTask, "Blink", STACK_DEPTH, NULL, *priority, NULL);
-    // xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, *priority + 1, NULL);
+    xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, *priority + 1, NULL);
     //  xTaskCreate(GPSTask, "GPS", STACK_DEPTH, NULL, *priority + 2, NULL);
     // xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, *priority, NULL);
     // xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);
     //  xTaskCreate(GSARxTask, "GSARx", STACK_DEPTH, NULL, *priority+3, NULL);
     //  xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority+3, NULL);
-    InitLogging();
-    xTaskCreate(LoggingQueueSmokeTestTask, "LogQSmoke", STACK_DEPTH, NULL, *priority, NULL);
-    InitMavlinkRx();
-    InitTx();
+    // InitLogging();
+    // xTaskCreate(LoggingQueueSmokeTestTask, "LogQSmoke", STACK_DEPTH, NULL, *priority, NULL);
+    // InitMavlinkRx();
+    // InitTx();
     Serial.println("[BOOT] starting scheduler");
 
     // manual
-    xTaskCreate(writeServoTask, "ServoWrite", 1024, NULL, 1, NULL);
-    xTaskCreate(updateStatesTask, "States", 1024, NULL, 2, NULL);
-    //xTaskCreate(radioTask, "ReadRadio(RX)", 1024, NULL, 3, NULL); TODO: REPLACE WITH MAVLink tasks
+    // xTaskCreate(writeServoTask, "ServoWrite", 1024, NULL, 1, NULL);
+    // xTaskCreate(updateStatesTask, "States", 1024, NULL, 2, NULL);
+    // xTaskCreate(radioTask, "ReadRadio(RX)", 1024, NULL, 3, NULL); TODO: REPLACE WITH MAVLink tasks
 
     vTaskStartScheduler();
 }
