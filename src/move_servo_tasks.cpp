@@ -13,6 +13,11 @@ constexpr T clamp(T v, T lo, T hi)
     return std::min(std::max(v, lo), hi);
 }
 
+int map_throttle(int cont_throttle)
+{ // recives 0 -1000 -> needs to be maped to 0 to 180
+    return (cont_throttle / 1000) * 180;
+}
+
 void servos_to_neutral()
 {
     left_aileron_servo.write(aileron_neutral);
@@ -43,7 +48,7 @@ void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servo
         controllerData->r = 0;
     }
 
-    servoStates->set_throttle = controllerData->z;
+    servoStates->set_throttle = map_throttle(controllerData->z); // passes 0 -1000 -> needs to be maped to 0 to 180
     servoStates->set_elevator = clamp(servoStates->set_elevator + controllerData->x * elevator_rate, (float)0, elevator_limit);
     servoStates->set_aileron = clamp(servoStates->set_aileron + controllerData->y * aileron_rate, (float)0, aileron_limit);
     servoStates->set_rudder = clamp(servoStates->set_rudder + controllerData->r * rudder_rate, (float)0, rudder_limit);
@@ -108,7 +113,7 @@ void set_servos(const SetServoStates_t *servoStates) // currently doesn't set th
 
     if (armed)
     {
-        ESC.write(servoStates->set_throttle * 180);
+        ESC.write(servoStates->set_throttle);
     }
     else
     {
