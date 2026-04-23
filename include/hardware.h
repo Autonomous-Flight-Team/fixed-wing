@@ -11,6 +11,7 @@
 #include <Adafruit_BMP3XX.h>
 #include <HardwareSerial.h>
 #include <TinyGPS++.h>
+#include <Adafruit_LSM9DS1.h>
 
 bool HardwareInit(void);
 bool intialize_manual_control();
@@ -18,6 +19,7 @@ bool intialize_manual_control();
 extern ICM_20948_I2C imu;
 extern Adafruit_BMP3XX bmp;
 extern TinyGPSPlus gps;
+extern Adafruit_LSM9DS1 lsm;
 
 #define gpsSerial Serial1
 
