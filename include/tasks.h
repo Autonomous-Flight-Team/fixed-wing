@@ -103,9 +103,10 @@ void RxMavlinkProcess900PacketTask(void *pvParameters);
 void MavlinkQgcHandshakeTask(void *pvParameters);
 void MavlinkSimulatedTelemetryTask(void *pvParameters);
 void Serial3LoopbackSelfTestTask(void *pvParameters);
+void QuadcopterOriginPacketForwardTask(void *pvParameters);
 
-// Manual tasks
-void writeServoTask(void *pvParameters);
+    // Manual tasks
+    void writeServoTask(void *pvParameters);
 void updateStatesTask(void *pvParameters);
 void radioTask(void *pvParameters);
 void printControllerTask(void *pvParameters);

@@ -188,6 +188,10 @@ static bool InitTx()
     {
         return false;
     }
+    if (!CreateTaskChecked(QuadcopterOriginPacketForwardTask, "QuadOriginPacketForward", STACK_DEPTH, *priority + 2))
+    {
+        return false;
+    }
     if (!CreateTaskChecked(MavlinkLatencyProbeTask, "MavLat", STACK_DEPTH, *priority + 2))
     {
         return false;

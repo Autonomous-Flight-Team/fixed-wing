@@ -14,9 +14,7 @@ void FillLoggingQueues(Log<StateVector_t> log)
     if (xQueueSend(stateVector_logging_queue, &log, 0) != pdTRUE) {
         ++stateVector_logging_drop_count;
     }
-    if (stateVector_latest_queue != nullptr) {
-        xQueueOverwrite(stateVector_latest_queue, &log);
-    }
+
 }
 
 void FillLoggingQueues(Log<IMUData_t> log)
@@ -92,7 +90,7 @@ void SDCardTask(void *pvParameters)
                 dataFile.print("CTRL,");
                 dataFile.print(controlLog.timestamp);
                 dataFile.print(",");
-                dataFile.println(controlLog.data);
+                //dataFile.println(controlLog.data);
             }
 
             if (stateVector_logging_queue != nullptr &&
@@ -101,7 +99,7 @@ void SDCardTask(void *pvParameters)
                 dataFile.print("STATE,");
                 dataFile.print(stateLog.timestamp);
                 dataFile.print(",");
-                dataFile.println(stateLog.data);
+                //dataFile.println(stateLog.data);
             }
 
             if (manualControl_t_logging_queue != nullptr &&
@@ -110,7 +108,7 @@ void SDCardTask(void *pvParameters)
                 dataFile.print("MAN,");
                 dataFile.print(manualLog.timestamp);
                 dataFile.print(",");
-                dataFile.println(manualLog.data);
+                //dataFile.println(manualLog.data);
             }
 
             if (imu_logging_queue != nullptr &&
@@ -119,7 +117,7 @@ void SDCardTask(void *pvParameters)
                 dataFile.print("IMU,");
                 dataFile.print(imuLog.timestamp);
                 dataFile.print(",");
-                dataFile.println(imuLog.data);
+                //dataFile.println(imuLog.data);
             }
 
             if (barometer_logging_queue != nullptr &&
@@ -128,7 +126,7 @@ void SDCardTask(void *pvParameters)
                 dataFile.print("BARO,");
                 dataFile.print(baroLog.timestamp);
                 dataFile.print(",");
-                dataFile.println(baroLog.data);
+                //dataFile.println(baroLog.data);
             }
 
             if (gps_logging_queue != nullptr &&
@@ -137,7 +135,7 @@ void SDCardTask(void *pvParameters)
                 dataFile.print("GPS,");
                 dataFile.print(gpsLog.timestamp);
                 dataFile.print(",");
-                dataFile.println(gpsLog.data);
+                //dataFile.println(gpsLog.data);
             }
 
             if (pitotTube_logging_queue != nullptr &&
@@ -146,7 +144,7 @@ void SDCardTask(void *pvParameters)
                 dataFile.print("PITOT,");
                 dataFile.print(pitotLog.timestamp);
                 dataFile.print(",");
-                dataFile.println(pitotLog.data);
+                //dataFile.println(pitotLog.data);
             }
 
             dataFile.close();
