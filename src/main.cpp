@@ -67,7 +67,6 @@ SetServoStates_t servoStateData = {
 QueueHandle_t controlOutput_logging_queue = nullptr;
 QueueHandle_t stateVector_logging_queue = nullptr;
 QueueHandle_t manualControl_t_logging_queue = nullptr;
-QueueHandle_t stateVector_latest_queue = nullptr;
 
 // Sensor Logging Queues
 QueueHandle_t imu_logging_queue;
@@ -158,7 +157,6 @@ static bool InitLogging()
     controlOutput_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<ControlOutput_t>));
     stateVector_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<StateVector_t>));
     manualControl_t_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<mavlink_manual_control_t>));
-    stateVector_latest_queue = xQueueCreate(1, sizeof(Log<StateVector_t>));
 
     // Sensor logging queues
     imu_logging_queue = xQueueCreate(QUEUE_SIZE, sizeof(Log<IMUData_t>));
@@ -169,7 +167,6 @@ static bool InitLogging()
     if (controlOutput_logging_queue == nullptr ||
         stateVector_logging_queue == nullptr ||
         manualControl_t_logging_queue == nullptr ||
-        stateVector_latest_queue == nullptr ||
         imu_logging_queue == nullptr || 
         barometer_logging_queue == nullptr || 
         gps_logging_queue == nullptr || 
@@ -240,6 +237,7 @@ void setup()
     dataMutex = xSemaphoreCreateMutex();
     mavlinkDataMutex = xSemaphoreCreateMutex();
     mavlinkTxMutex = xSemaphoreCreateMutex();
+
     if (controllerMutex == nullptr ||
         stateMutex == nullptr ||
         dataMutex == nullptr ||
@@ -261,19 +259,19 @@ void setup()
         FailStartup("Blink task creation failed");
     }
     xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, *priority + 1, NULL);
+
     //  xTaskCreate(GPSTask, "GPS", STACK_DEPTH, NULL, *priority + 2, NULL);
     // xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, *priority, NULL);
     // xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);
-    //  xTaskCreate(GSARxTask, "GSARx", STACK_DEPTH, NULL, *priority+3, NULL);
-    //  xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority+3, NULL);
+
     if (!InitLogging())
     {
         FailStartup("InitLogging failed");
     }
-    if (!CreateTaskChecked(LoggingQueueSmokeTestTask, "LogQSmoke", STACK_DEPTH, *priority))
-    {
-        FailStartup("LogQSmoke task creation failed");
-    }
+    // if (!CreateTaskChecked(LoggingQueueSmokeTestTask, "LogQSmoke", STACK_DEPTH, *priority))
+    // {
+    //     FailStartup("LogQSmoke task creation failed");
+    // }
     if (!InitMavlinkRx())
     {
         FailStartup("InitMavlinkRx failed");

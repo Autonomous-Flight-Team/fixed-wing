@@ -60,7 +60,6 @@ inline constexpr uint8_t MAVLINK_COMPONENT_ID = MAV_COMP_ID_AUTOPILOT1;
 extern QueueHandle_t controlOutput_logging_queue;
 extern QueueHandle_t stateVector_logging_queue;
 extern QueueHandle_t manualControl_t_logging_queue;
-extern QueueHandle_t stateVector_latest_queue;
 
 extern QueueHandle_t imu_logging_queue;
 extern QueueHandle_t barometer_logging_queue;

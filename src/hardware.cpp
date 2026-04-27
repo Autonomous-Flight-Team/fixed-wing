@@ -39,10 +39,11 @@ bool GPSInit() {
 }
 
 bool SDInit() {
-    if (SD.begin(BUILTIN_SDCARD)) {
+    if (!SD.begin(BUILTIN_SDCARD)) {
         Serial.println("SD Card failed :(");
         return false;
     }
+    Serial.println("SD Card working!");
     return true;
 }
 
