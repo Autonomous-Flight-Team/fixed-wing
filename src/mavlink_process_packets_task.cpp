@@ -82,6 +82,8 @@ void ProcessPacket(const MavlinkRxPacket_t &pkt) {
             mc.y = PwmToAxis(rc.chan1_raw);      // roll
             mc.r = PwmToAxis(rc.chan4_raw);      // yaw
             mc.z = PwmToThrottle(rc.chan3_raw);  // throttle [0..1000]
+            mc.aux1 = rc.chan5_raw;
+            mc.aux2 = rc.chan6_raw;
             mc.buttons = 0U;
             LockMavlinkData();
             manual_control_data = mc;

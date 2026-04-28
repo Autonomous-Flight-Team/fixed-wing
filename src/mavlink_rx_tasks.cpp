@@ -9,8 +9,6 @@ Advik Sharma - github.com/jpyces
 #include <queue.h>
 
 // Shared RX queues and telemetry state, defined here and exposed via tasks.h.
-//QueueHandle_t mavlinkRxQueue900 = nullptr;
-//QueueHandle_t mavlinkRxQueue24  = nullptr;
 volatile uint32_t mavlinkRxDrop900 = 0;
 volatile uint32_t mavlinkRxDrop24  = 0;
 volatile uint32_t mavlinkRxParsed24Count = 0;
