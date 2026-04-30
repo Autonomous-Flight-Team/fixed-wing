@@ -3,5 +3,4 @@
 .DS_STORE
 todolist.md
 .github/workflows/build.yml
-log_decoder.py
 
