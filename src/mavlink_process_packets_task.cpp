@@ -69,6 +69,31 @@ void ProcessPacket(const MavlinkRxPacket_t &pkt) {
             LockMavlinkData();
             mavlink_msg_manual_control_decode(&pkt.msg, &manual_control_data);
             ConstructLogAndFillQueue(manual_control_data);
+            // Serial.print("1: ");
+
+            // Serial.println(manual_control_data.aux1);
+            // Serial.print("2: ");
+            
+            // Serial.println(manual_control_data.aux2);
+            // Serial.print("3: ");
+
+            // Serial.println(manual_control_data.aux3);
+            // Serial.print("4: ");
+
+            // Serial.println(manual_control_data.aux4);
+            // Serial.print("5: ");
+
+            // Serial.println(manual_control_data.aux5);
+            // Serial.print("6: ");
+
+            // Serial.println(manual_control_data.aux6);
+            Serial.print("buttons: ");
+
+            Serial.println(manual_control_data.buttons, 2);
+            // Serial.print("buttons2: ");
+
+            // Serial.println(manual_control_data.buttons2);
+
             UpdateManualInputMetadataLocked();
             UnlockMavlinkData();
             break;
@@ -82,6 +107,11 @@ void ProcessPacket(const MavlinkRxPacket_t &pkt) {
             mc.y = PwmToAxis(rc.chan1_raw);      // roll
             mc.r = PwmToAxis(rc.chan4_raw);      // yaw
             mc.z = PwmToThrottle(rc.chan3_raw);  // throttle [0..1000]
+            Serial.println("Updates from RC Channel Override");
+            Serial.print("Channel 5: ");
+            Serial.println(rc.chan5_raw);
+            Serial.print("Channel 6: ");
+            Serial.println(rc.chan6_raw);
             mc.aux1 = rc.chan5_raw;
             mc.aux2 = rc.chan6_raw;
             mc.buttons = 0U;

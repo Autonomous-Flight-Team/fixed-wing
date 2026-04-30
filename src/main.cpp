@@ -176,14 +176,13 @@ static bool InitLogging()
         return false;
     }
 
-    return CreateTaskChecked(SDCardTask, "Logger", STACK_DEPTH, *priority);
+    return CreateTaskChecked(SDCardTask, "Logger", 2048, *priority);
 }
 
 static bool InitTx()
 {
     // Keep Serial2 MAVLink-only for QGC. GSATxTask writes a raw custom packet and
     // can corrupt MAVLink framing on the same UART.
-    // xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority + 2, NULL);
     if (!CreateTaskChecked(MavlinkHeartbeatTask, "MavHb", STACK_DEPTH, *priority + 2))
     {
         return false;
@@ -192,10 +191,10 @@ static bool InitTx()
     {
         return false;
     }
-    if (!CreateTaskChecked(MavlinkLatencyProbeTask, "MavLat", STACK_DEPTH, *priority + 2))
-    {
-        return false;
-    }
+    // if (!CreateTaskChecked(MavlinkLatencyProbeTask, "MavLat", STACK_DEPTH, *priority + 2))
+    // {
+    //     return false;
+    // }
     if (!CreateTaskChecked(MavlinkAltitudeTask, "MavAlt", STACK_DEPTH, *priority + 2))
     {
         return false;
@@ -296,7 +295,7 @@ void setup()
         FailStartup("States task creation failed");
     }
     // xTaskCreate(radioTask, "ReadRadio(RX)", 1024, NULL, 3, NULL); TODO: REPLACE WITH MAVLink tasks
-    xTaskCreate(printControllerTask, "PrintController", 2048, NULL, 1, NULL);
+    //xTaskCreate(printControllerTask, "PrintController", 2048, NULL, 1, NULL);
     vTaskStartScheduler();
 }
 

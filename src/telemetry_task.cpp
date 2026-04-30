@@ -8,6 +8,7 @@ Advik Sharma - github.com/jpyces
 #include "string.h"
 #include <arduino_freertos.h>
 #include <queue.h>
+#include <TimeLib.h>
 
 void FillLoggingQueues(Log<StateVector_t> log)
 {
@@ -67,6 +68,44 @@ void SDCardTask(void *pvParameters)
 {
     (void)pvParameters;
 
+    vTaskDelay(pdMS_TO_TICKS(2000)); // Give Serial and SD time to settle
+    Serial.println("SD Task: Starting...");
+
+    // Re-run begin inside the task context
+    if (!SD.begin(BUILTIN_SDCARD))
+    {
+        Serial.println("SD Task: SD.begin failed inside task!");
+        vTaskDelete(NULL);
+        return;
+    }
+
+    time_t t = Teensy3Clock.get();
+    char path[64];     // Buffer for full path
+
+    // 1. Create the directory path (e.g., /2026/04/29/)
+    char dirPath[32];
+    snprintf(dirPath, sizeof(dirPath), "/%04d/%02d/%02d", year(t), month(t), day(t));
+
+    // 2. Ensure the directories exist (mkdir handles nested paths automatically)
+    SD.mkdir(dirPath);
+
+    // 3. Create the full file path (e.g., /2026/04/29/LOG_17-11-42.txt)
+    snprintf(path, sizeof(path), "%s/LOG_%02d-%02d-%02d.txt",
+             dirPath, hour(t), minute(t), second(t));
+
+    File dataFile = SD.open(path, FILE_WRITE);
+    if (!dataFile)
+    {
+        Serial.printf("SD Task: Open Failed! Error: %d\n", 0); // Check Serial Monitor
+        vTaskDelete(NULL);
+        return;
+    }
+    else
+    {
+        Serial.println("SD Task: File opened successfully!");
+        dataFile.println("Logging started...");
+    }
+
     const TickType_t consumePeriod = pdMS_TO_TICKS(400);
     TickType_t lastWake = xTaskGetTickCount();
 
@@ -80,8 +119,7 @@ void SDCardTask(void *pvParameters)
 
     for (;;)
     {
-        File dataFile = SD.open("log_TODOADDTIME.txt", FILE_WRITE);
-
+        dataFile.println("WE ARE HERE!");
         if (dataFile)
         {
             if (controlOutput_logging_queue != nullptr &&
@@ -90,7 +128,7 @@ void SDCardTask(void *pvParameters)
                 dataFile.print("CTRL,");
                 dataFile.print(controlLog.timestamp);
                 dataFile.print(",");
-                //dataFile.println(controlLog.data);
+                // dataFile.println(controlLog.data);
             }
 
             if (stateVector_logging_queue != nullptr &&
@@ -147,7 +185,12 @@ void SDCardTask(void *pvParameters)
                 //dataFile.println(pitotLog.data);
             }
 
-            dataFile.close();
+            if (dataFile)
+            {
+                dataFile.println("Logging data...");
+                // Use flush instead of close to save data periodically
+                dataFile.flush();
+            }
         }
 
         vTaskDelayUntil(&lastWake, consumePeriod);
