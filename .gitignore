@@ -3,4 +3,6 @@
 .DS_STORE
 todolist.md
 .github/workflows/build.yml
-logs/
+SD_card_log-decoder/logs
+SD_card_log-decoder/venv
+
