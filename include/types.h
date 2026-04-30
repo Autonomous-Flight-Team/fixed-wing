@@ -26,6 +26,7 @@ typedef enum
     LINK_24GHZ = 1
 } MavlinkLink_t;
 
+#pragma pack(push, 1)
 typedef struct
 {
     MavlinkLink_t link;
@@ -171,5 +172,7 @@ typedef struct
     bool flaps;
     bool release_drone;
 } SetServoStates_t;
+
+#pragma pack(pop) // End: Return to normal
 
 #endif

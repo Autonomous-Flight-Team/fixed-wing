@@ -90,7 +90,7 @@ void SDCardTask(void *pvParameters)
     SD.mkdir(dirPath);
 
     // 3. Create the full file path (e.g., /2026/04/29/LOG_17-11-42.txt)
-    snprintf(path, sizeof(path), "%s/LOG_%02d-%02d-%02d.txt",
+    snprintf(path, sizeof(path), "%s/LOG_%02d-%02d-%02d.dat",
              dirPath, hour(t), minute(t), second(t));
 
     File dataFile = SD.open(path, FILE_WRITE);
@@ -119,75 +119,53 @@ void SDCardTask(void *pvParameters)
 
     for (;;)
     {
-        dataFile.println("WE ARE HERE!");
         if (dataFile)
         {
             if (controlOutput_logging_queue != nullptr &&
                 xQueueReceive(controlOutput_logging_queue, &controlLog, 0) == pdTRUE)
             {
-                dataFile.print("CTRL,");
-                dataFile.print(controlLog.timestamp);
-                dataFile.print(",");
-                // dataFile.println(controlLog.data);
+                writeLogBinary("CTRL", controlLog, dataFile);
             }
 
             if (stateVector_logging_queue != nullptr &&
                 xQueueReceive(stateVector_logging_queue, &stateLog, 0) == pdTRUE)
             {
-                dataFile.print("STATE,");
-                dataFile.print(stateLog.timestamp);
-                dataFile.print(",");
-                //dataFile.println(stateLog.data);
+                writeLogBinary("State_Vector", stateLog, dataFile);
             }
 
             if (manualControl_t_logging_queue != nullptr &&
                 xQueueReceive(manualControl_t_logging_queue, &manualLog, 0) == pdTRUE)
             {
-                dataFile.print("MAN,");
-                dataFile.print(manualLog.timestamp);
-                dataFile.print(",");
-                //dataFile.println(manualLog.data);
+                writeLogBinary("Manual_Controller", manualLog, dataFile);
             }
 
             if (imu_logging_queue != nullptr &&
                 xQueueReceive(imu_logging_queue, &imuLog, 0) == pdTRUE)
             {
-                dataFile.print("IMU,");
-                dataFile.print(imuLog.timestamp);
-                dataFile.print(",");
-                //dataFile.println(imuLog.data);
+                writeLogBinary("IMU", imuLog, dataFile);
             }
 
             if (barometer_logging_queue != nullptr &&
                 xQueueReceive(barometer_logging_queue, &baroLog, 0) == pdTRUE)
             {
-                dataFile.print("BARO,");
-                dataFile.print(baroLog.timestamp);
-                dataFile.print(",");
+                writeLogBinary("BARO", baroLog, dataFile);
                 //dataFile.println(baroLog.data);
             }
 
             if (gps_logging_queue != nullptr &&
                 xQueueReceive(gps_logging_queue, &gpsLog, 0) == pdTRUE)
             {
-                dataFile.print("GPS,");
-                dataFile.print(gpsLog.timestamp);
-                dataFile.print(",");
-                //dataFile.println(gpsLog.data);
+                writeLogBinary("GPS", gpsLog, dataFile);
             }
 
             if (pitotTube_logging_queue != nullptr &&
                 xQueueReceive(pitotTube_logging_queue, &pitotLog, 0) == pdTRUE)
             {
-                dataFile.print("PITOT,");
-                dataFile.print(pitotLog.timestamp);
-                dataFile.print(",");
-                //dataFile.println(pitotLog.data);
+                writeLogBinary("Pitot", pitotLog, dataFile);
             }
 
             if (dataFile)
-            {
-                dataFile.println("Logging data...");
+            {                
                 // Use flush instead of close to save data periodically
                 dataFile.flush();
             }

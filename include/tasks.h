@@ -105,8 +105,8 @@ void MavlinkSimulatedTelemetryTask(void *pvParameters);
 void Serial3LoopbackSelfTestTask(void *pvParameters);
 void QuadcopterOriginPacketForwardTask(void *pvParameters);
 
-    // Manual tasks
-    void writeServoTask(void *pvParameters);
+// Manual tasks
+void writeServoTask(void *pvParameters);
 void updateStatesTask(void *pvParameters);
 void radioTask(void *pvParameters);
 void printControllerTask(void *pvParameters);
@@ -138,4 +138,14 @@ inline void ConstructLogAndFillQueue(const T &data)
     FillLoggingQueues(log);
 }
 
+template <typename T>
+inline void writeLogBinary(const char *tag, const Log<T> &log, File &f)
+{
+    if (f)
+    {
+        f.print(tag); // Write a 4-char ID like "IMU," or "BARO"
+        f.write((const uint8_t *)&log, sizeof(Log<T>));
+        f.println(); // Optional: helps visually separate if you open in a hex editor
+    }
+}
 #endif
