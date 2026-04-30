@@ -130,7 +130,7 @@ static bool InitMavlinkRx()
     {
         return false;
     }
-    if (!CreateTaskChecked(MavlinkRx24Task, "Rx24", STACK_DEPTH, *priority + 2))
+    if (!CreateTaskChecked(MavlinkRx24Task, "Rx24", STACK_DEPTH, *priority + 3))
     {
         return false;
     }
@@ -187,21 +187,21 @@ static bool InitTx()
     {
         return false;
     }
-    if (!CreateTaskChecked(QuadcopterOriginPacketForwardTask, "QuadOriginPacketForward", STACK_DEPTH, *priority + 2))
+    if (!CreateTaskChecked(QuadcopterOriginPacketForwardTask, "QuadOriginPacketForward", STACK_DEPTH, *priority + 1))
     {
         return false;
     }
-    // if (!CreateTaskChecked(MavlinkLatencyProbeTask, "MavLat", STACK_DEPTH, *priority + 2))
-    // {
-    //     return false;
-    // }
-    if (!CreateTaskChecked(MavlinkAltitudeTask, "MavAlt", STACK_DEPTH, *priority + 2))
+    if (!CreateTaskChecked(MavlinkLatencyProbeTask, "MavLat", STACK_DEPTH, *priority + 1))
+    {
+        return false;
+    }
+    if (!CreateTaskChecked(MavlinkAltitudeTask, "MavAlt", STACK_DEPTH, *priority + 1))
     {
         return false;
     }
     if (kEnableSimulatedLocationSensorTask)
     {
-        if (!CreateTaskChecked(MavlinkSimulatedTelemetryTask, "MavSim", RX_PROCESS_STACK_DEPTH, *priority + 2))
+        if (!CreateTaskChecked(MavlinkSimulatedTelemetryTask, "MavSim", RX_PROCESS_STACK_DEPTH, *priority))
         {
             return false;
         }
@@ -286,11 +286,11 @@ void setup()
     Serial.println("[BOOT] starting scheduler");
 
     // manual
-    if (!CreateTaskChecked(writeServoTask, "ServoWrite", 1024, 1))
+    if (!CreateTaskChecked(writeServoTask, "ServoWrite", 1024, *priority))
     {
         FailStartup("ServoWrite task creation failed");
     }
-    if (!CreateTaskChecked(updateStatesTask, "States", 1024, 2))
+    if (!CreateTaskChecked(updateStatesTask, "States", 1024, *priority + 2))
     {
         FailStartup("States task creation failed");
     }

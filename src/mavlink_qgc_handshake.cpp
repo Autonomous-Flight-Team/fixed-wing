@@ -397,5 +397,6 @@ void MavlinkQgcHandshakeTask(void *pvParameters) {
         if (xQueueReceive(mavlinkQgcHandshakeQueue, &pkt, pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK)) == pdTRUE) {
             ProcessQgcHandshakePacket(pkt);
         }
+        vTaskDelay(pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK));
     }
 }

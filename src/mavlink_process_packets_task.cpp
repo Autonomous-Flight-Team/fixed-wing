@@ -69,7 +69,7 @@ void ProcessPacket(const MavlinkRxPacket_t &pkt) {
             LockMavlinkData();
             mavlink_msg_manual_control_decode(&pkt.msg, &manual_control_data);
             ConstructLogAndFillQueue(manual_control_data);
-            // Serial.print("1: ");
+            Serial.print("RECEIVED MANUAL CONTROL DATA ");
 
             // Serial.println(manual_control_data.aux1);
             // Serial.print("2: ");
@@ -137,8 +137,9 @@ void ProcessPacket(const MavlinkRxPacket_t &pkt) {
         }
 
         default:
-            break;
-    }
+            Serial.print("Unknown msgid: ");
+            Serial.println(pkt.msg.msgid);
+        }
 }
 }  // namespace
 
@@ -151,15 +152,14 @@ void RxMavlinkProcess900PacketTask(void *pvParameters) {
             vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
             continue;
         }
-
+        
         if (xQueueReceive(mavlinkRxQueue900, &pkt, 0) == pdTRUE) {
             if (mavlinkQgcHandshakeQueue != nullptr) {
                 (void)xQueueSend(mavlinkQgcHandshakeQueue, &pkt, 0);
             }
             ProcessPacket(pkt);
-        } else {
-            vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
         }
+        vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
     }
 }
 
@@ -175,8 +175,7 @@ void RxMavlinkProcess24PacketTask(void *pvParameters){
 
         if (xQueueReceive(mavlinkRxQueue24, &pkt, 0) == pdTRUE){
             xQueueSend(mavlinkRx24_QuadcopterOrigin_ForwardQueue, &pkt, 0);
-        } else {
-            vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
         }
+        vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
     }
 }

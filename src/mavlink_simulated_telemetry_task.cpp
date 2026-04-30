@@ -223,6 +223,7 @@ void MavlinkSimulatedTelemetryTask(void *pvParameters) {
     SimFlightState sim = {};
 
     for (;;) {
+        //Serial.println("Simulation");
         const uint32_t nowMs = millis();
         float dtSec = static_cast<float>(nowMs - lastUpdateMs) / 1000.0f;
         lastUpdateMs = nowMs;
