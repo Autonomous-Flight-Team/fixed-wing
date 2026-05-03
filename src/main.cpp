@@ -9,14 +9,25 @@
 #include <semphr.h>
 #include <task.h>
 
-#define QUEUE_SIZE 100
+constexpr int QUEUE_SIZE = 100;
+
+// Priority Variables
+constexpr int kPriorityOne = 1;  // Constant storing L1 Priority Indicator
+constexpr int kPriorityTwo = 2;  // Constant storing L2 Priority Indicator
+constexpr int kPriorityThree = 3;  // Constant storing L3 Priority Indicator
+constexpr int kPriorityFour = 4;  // Constant storing L4 Priority Indicator
+constexpr int kPriorityFive = 5;   // Constant storing L5 Priority Indicator
+constexpr int kPrioritySix = 6;   // Constant storing L6 Priority Indicator
+constexpr int kPrioritySeven = 7; // Constant storing L7 Priority Indicator
+constexpr int kPriorityEight = 8;  // Constant storing L8 Priority Indicator
+
 SemaphoreHandle_t dataMutex, controllerMutex, stateMutex, mavlinkDataMutex, mavlinkTxMutex;
 // mavlinkTxMutex protects the actual UART line to prevent multiple tasks from writing at the same time
 //      and forces single frame writes at a time
 
 int STACK_DEPTH = 512;
 int RX_PROCESS_STACK_DEPTH = 1536;
-int priority[] = {1, 2, 3, 4};
+//int priority[] = {1, 2, 3, 4};
 static constexpr bool kEnableSimulatedLocationSensorTask = true;
 static constexpr bool kEnableSerial3LoopbackSelfTestTask = false;
 
@@ -126,25 +137,29 @@ static bool InitMavlinkRx()
         return false;
     }
 
-    if (!CreateTaskChecked(MavlinkRx900Task, "Rx900", STACK_DEPTH, *priority + 3))
+    if (!CreateTaskChecked(MavlinkRx900Task, "Rx900", STACK_DEPTH, kPriorityFour))
     {
         return false;
     }
-    if (!CreateTaskChecked(MavlinkRx24Task, "Rx24", STACK_DEPTH, *priority + 3))
+    if (!CreateTaskChecked(MavlinkRx24Task, "Rx24", STACK_DEPTH, kPriorityFour))
     {
         return false;
     }
-    if (!CreateTaskChecked(RxMavlinkProcess900PacketTask, "900MhzProces", RX_PROCESS_STACK_DEPTH, *priority + 2))
+    if (!CreateTaskChecked(RxMavlinkProcess900PacketTask, "900MhzProces", RX_PROCESS_STACK_DEPTH, kPriorityThree))
     {
         return false;
     }
-    if (!CreateTaskChecked(MavlinkQgcHandshakeTask, "QgcHandshake", RX_PROCESS_STACK_DEPTH, *priority + 2))
+    if (!CreateTaskChecked(RxMavlinkProcess24PacketTask, "24GhzProces", RX_PROCESS_STACK_DEPTH, kPriorityThree))
+    {
+        return false;
+    }
+    if (!CreateTaskChecked(MavlinkQgcHandshakeTask, "QgcHandshake", RX_PROCESS_STACK_DEPTH, kPriorityThree))
     {
         return false;
     }
     if (kEnableSerial3LoopbackSelfTestTask)
     {
-        if (!CreateTaskChecked(Serial3LoopbackSelfTestTask, "Ser3Loop", STACK_DEPTH, *priority + 1))
+        if (!CreateTaskChecked(Serial3LoopbackSelfTestTask, "Ser3Loop", STACK_DEPTH, kPriorityTwo))
         {
             return false;
         }
@@ -176,32 +191,32 @@ static bool InitLogging()
         return false;
     }
 
-    return CreateTaskChecked(SDCardTask, "Logger", 2048, *priority);
+    return CreateTaskChecked(SDCardTask, "Logger", 2048, kPriorityOne);
 }
 
 static bool InitTx()
 {
     // Keep Serial2 MAVLink-only for QGC. GSATxTask writes a raw custom packet and
     // can corrupt MAVLink framing on the same UART.
-    if (!CreateTaskChecked(MavlinkHeartbeatTask, "MavHb", STACK_DEPTH, *priority + 2))
+    if (!CreateTaskChecked(MavlinkHeartbeatTask, "MavHb", STACK_DEPTH, kPriorityThree))
     {
         return false;
     }
-    if (!CreateTaskChecked(QuadcopterOriginPacketForwardTask, "QuadOriginPacketForward", STACK_DEPTH, *priority + 1))
+    if (!CreateTaskChecked(QuadcopterOriginPacketForwardTask, "QuadOriginPacketForward", STACK_DEPTH, kPriorityTwo))
     {
         return false;
     }
-    if (!CreateTaskChecked(MavlinkLatencyProbeTask, "MavLat", STACK_DEPTH, *priority + 1))
+    if (!CreateTaskChecked(MavlinkLatencyProbeTask, "MavLat", STACK_DEPTH, kPriorityTwo))
     {
         return false;
     }
-    if (!CreateTaskChecked(MavlinkAltitudeTask, "MavAlt", STACK_DEPTH, *priority + 1))
+    if (!CreateTaskChecked(MavlinkAltitudeTask, "MavAlt", STACK_DEPTH, kPriorityTwo))
     {
         return false;
     }
     if (kEnableSimulatedLocationSensorTask)
     {
-        if (!CreateTaskChecked(MavlinkSimulatedTelemetryTask, "MavSim", RX_PROCESS_STACK_DEPTH, *priority))
+        if (!CreateTaskChecked(MavlinkSimulatedTelemetryTask, "MavSim", RX_PROCESS_STACK_DEPTH, kPriorityOne))
         {
             return false;
         }
@@ -257,21 +272,21 @@ void setup()
     // pvParameters - Parameters passed into task
     // uxPriority - Priority level (lower is more priority)
     // pxCreatedTask - Pointer to task handle
-    if (!CreateTaskChecked(BlinkTask, "Blink", STACK_DEPTH, *priority))
+    if (!CreateTaskChecked(BlinkTask, "Blink", STACK_DEPTH, kPriorityOne))
     {
         FailStartup("Blink task creation failed");
     }
-    xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, *priority + 1, NULL);
+    xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, kPriorityTwo, NULL);
 
-    //  xTaskCreate(GPSTask, "GPS", STACK_DEPTH, NULL, *priority + 2, NULL);
-    // xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, *priority, NULL);
-    // xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);
+    //  xTaskCreate(GPSTask, "GPS", STACK_DEPTH, NULL, kPriorityThree, NULL);
+    // xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, kPriorityOne, NULL);
+    // xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, kPriorityOne, NULL);
 
     if (!InitLogging())
     {
         FailStartup("InitLogging failed");
     }
-    // if (!CreateTaskChecked(LoggingQueueSmokeTestTask, "LogQSmoke", STACK_DEPTH, *priority))
+    // if (!CreateTaskChecked(LoggingQueueSmokeTestTask, "LogQSmoke", STACK_DEPTH, kPriorityOne))
     // {
     //     FailStartup("LogQSmoke task creation failed");
     // }
@@ -286,11 +301,11 @@ void setup()
     Serial.println("[BOOT] starting scheduler");
 
     // manual
-    if (!CreateTaskChecked(writeServoTask, "ServoWrite", 1024, *priority))
+    if (!CreateTaskChecked(writeServoTask, "ServoWrite", 1024, kPriorityOne))
     {
         FailStartup("ServoWrite task creation failed");
     }
-    if (!CreateTaskChecked(updateStatesTask, "States", 1024, *priority + 2))
+    if (!CreateTaskChecked(updateStatesTask, "States", 1024, kPriorityThree))
     {
         FailStartup("States task creation failed");
     }

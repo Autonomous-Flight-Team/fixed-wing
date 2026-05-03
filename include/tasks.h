@@ -51,8 +51,9 @@ extern volatile uint32_t mavlinkLatencyOneWayAvgUs;
 extern volatile uint32_t mavlinkPilotLatencyEstimateUs;
 
 // RX loops are paced to avoid starving other tasks; dispatch is slightly faster.
+// made the same for testing purposes
 const int RX_SLOW_MS_PER_TICK = 2; // 500 Hz poll
-const int RX_FAST_MS_PER_TICK = 1; // 1000 Hz poll
+const int RX_FAST_MS_PER_TICK = 2; // 1000 Hz poll
 inline constexpr uint8_t MAVLINK_SYSTEM_ID = 10U;
 inline constexpr uint8_t MAVLINK_COMPONENT_ID = MAV_COMP_ID_AUTOPILOT1;
 
@@ -87,19 +88,18 @@ void ImuBaroTask(void *pvParameters);
 void GPSTask(void *pvParameters);
 void StateTask(void *pvParameters);
 void PIDTask(void *pvParameters);
-void GSATxTask(void *pvParameters);
-void GSARxTask(void *pvParameters);
 void BlinkTask(void *pvParameters);
+
+// Mavlink Tasks
 void MavlinkHeartbeatTask(void *pvParameters);
 void MavlinkLatencyProbeTask(void *pvParameters);
 void MavlinkAltitudeTask(void *pvParameters);
-
-// Mavlink Tasks
 void MavlinkRx900Task(void *pvParameters);
 void MavlinkRx24Task(void *pvParameters);
-void MavlinkControlDispatchTask(void *pvParameters);
-void MavlinkTelemetryDispatchTask(void *pvParameters);
+//void MavlinkControlDispatchTask(void *pvParameters);
+//void MavlinkTelemetryDispatchTask(void *pvParameters);
 void RxMavlinkProcess900PacketTask(void *pvParameters);
+void RxMavlinkProcess24PacketTask(void *pvParameters);
 void MavlinkQgcHandshakeTask(void *pvParameters);
 void MavlinkSimulatedTelemetryTask(void *pvParameters);
 void Serial3LoopbackSelfTestTask(void *pvParameters);
