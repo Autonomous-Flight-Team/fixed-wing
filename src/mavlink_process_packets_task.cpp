@@ -69,7 +69,7 @@ void ProcessPacket(const MavlinkRxPacket_t &pkt) {
             LockMavlinkData();
             mavlink_msg_manual_control_decode(&pkt.msg, &manual_control_data);
             ConstructLogAndFillQueue(manual_control_data);
-            Serial.print("RECEIVED MANUAL CONTROL DATA ");
+            //Serial.print("RECEIVED MANUAL CONTROL DATA ");
 
             // Serial.println(manual_control_data.aux1);
             // Serial.print("2: ");
@@ -87,9 +87,9 @@ void ProcessPacket(const MavlinkRxPacket_t &pkt) {
             // Serial.print("6: ");
 
             // Serial.println(manual_control_data.aux6);
-            Serial.print("buttons: ");
+            //Serial.print("buttons: ");
 
-            Serial.println(manual_control_data.buttons, 2);
+            //Serial.println(manual_control_data.buttons, 2);
             // Serial.print("buttons2: ");
 
             // Serial.println(manual_control_data.buttons2);
