@@ -53,7 +53,7 @@ extern volatile uint32_t mavlinkPilotLatencyEstimateUs;
 // RX loops are paced to avoid starving other tasks; dispatch is slightly faster.
 // made the same for testing purposes
 const int RX_SLOW_MS_PER_TICK = 2; // 500 Hz poll
-const int RX_FAST_MS_PER_TICK = 2; // 1000 Hz poll
+const int RX_FAST_MS_PER_TICK = 1; // 1000 Hz poll
 inline constexpr uint8_t MAVLINK_SYSTEM_ID = 10U;
 inline constexpr uint8_t MAVLINK_COMPONENT_ID = MAV_COMP_ID_AUTOPILOT1;
 
