@@ -139,7 +139,7 @@ inline void ConstructLogAndFillQueue(const T &data)
 }
 
 template <typename T>
-inline void writeLogBinary(const char *tag, const Log<T> &log, File &f)
+inline void writeLogBinary(const char *tag, const SD_Log_t<T> &log, File &f)
 {
     if (f)
     {

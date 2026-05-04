@@ -119,49 +119,64 @@ void SDCardTask(void *pvParameters)
 
     for (;;)
     {
+        
         if (dataFile)
         {
             if (controlOutput_logging_queue != nullptr &&
                 xQueueReceive(controlOutput_logging_queue, &controlLog, 0) == pdTRUE)
             {
-                writeLogBinary("CTRL", controlLog, dataFile);
+                SD_Log_t sdControlLog = new SD_Log_t(controlLog.data);
+                sdControlLog.timestamp = controlLog.timestamp;
+                writeLogBinary("CTRL", sdControlLog, dataFile);
             }
 
             if (stateVector_logging_queue != nullptr &&
                 xQueueReceive(stateVector_logging_queue, &stateLog, 0) == pdTRUE)
             {
-                writeLogBinary("State_Vector", stateLog, dataFile);
+                SD_Log_t sdStateLog = new SD_Log_t(stateLog.data);
+                sdStateLog.timestamp = stateLog.timestamp;
+                writeLogBinary("State_Vector", sdStateLog, dataFile);
             }
 
             if (manualControl_t_logging_queue != nullptr &&
                 xQueueReceive(manualControl_t_logging_queue, &manualLog, 0) == pdTRUE)
             {
-                writeLogBinary("Manual_Controller", manualLog, dataFile);
+                SD_Log_t sdManualLog = new SD_Log_t(manualLog.data);
+                sdManualLog.timestamp = manualLog.timestamp;
+                writeLogBinary("Manual_Controller", sdManualLog, dataFile);
             }
 
             if (imu_logging_queue != nullptr &&
                 xQueueReceive(imu_logging_queue, &imuLog, 0) == pdTRUE)
             {
-                writeLogBinary("IMU", imuLog, dataFile);
+                SD_Log_t sdIMULog = new SD_Log_t(imuLog.data);
+                sdIMULog.timestamp = imuLog.timestamp;
+                writeLogBinary("IMU", sdIMULog, dataFile);
             }
 
             if (barometer_logging_queue != nullptr &&
                 xQueueReceive(barometer_logging_queue, &baroLog, 0) == pdTRUE)
             {
-                writeLogBinary("BARO", baroLog, dataFile);
+                SD_Log_t sdBarometerLog = new SD_Log_t(baroLog.data);
+                sdBarometerLog.timestamp = baroLog.timestamp;
+                writeLogBinary("BARO", sdBarometerLog, dataFile);
                 //dataFile.println(baroLog.data);
             }
 
             if (gps_logging_queue != nullptr &&
                 xQueueReceive(gps_logging_queue, &gpsLog, 0) == pdTRUE)
             {
-                writeLogBinary("GPS", gpsLog, dataFile);
+                SD_Log_t sdGPSLog = new SD_Log_t(gpsLog.data);
+                sdGPSLog.timestamp = gpsLog.timestamp;
+                writeLogBinary("GPS", sdGPSLog, dataFile);
             }
 
             if (pitotTube_logging_queue != nullptr &&
                 xQueueReceive(pitotTube_logging_queue, &pitotLog, 0) == pdTRUE)
             {
-                writeLogBinary("Pitot", pitotLog, dataFile);
+                SD_Log_t sdPitotLog = new SD_Log_t(pitotLog.data);
+                sdPitotLog.timestamp = pitotLog.timestamp;
+                writeLogBinary("Pitot", sdPitotLog, dataFile);
             }
 
             if (dataFile)

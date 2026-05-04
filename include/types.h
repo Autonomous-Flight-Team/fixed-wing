@@ -26,7 +26,6 @@ typedef enum
     LINK_24GHZ = 1
 } MavlinkLink_t;
 
-#pragma pack(push, 1)
 typedef struct
 {
     MavlinkLink_t link;
@@ -173,6 +172,21 @@ typedef struct
     bool release_drone;
 } SetServoStates_t;
 
+// New struct for putting logs into sdcard in binary - gets rid of packing that can confuse binary
+// decoder - efficiency and separation between ram and persistence memory
+#pragma pack(push, 1)
+template <typename T>
+struct SD_Log_t
+{
+    T data;
+    // Default constructor: handles cases where no value is provided
+    SD_Log_t() : data() {}
+
+    // Parameterized constructor: takes a value and moves it into 'data'
+    SD_Log_t(T value) : data(value) {}
+
+    TickType_t timestamp;
+};
 #pragma pack(pop) // End: Return to normal
 
 #endif
