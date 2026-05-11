@@ -40,7 +40,7 @@ bool initialize_esc()
   armed = false;
   pinMode(esc_pin, OUTPUT);
   ESC.attach(esc_pin, 1000, 2000);
-  ESC.write(0);
+  ESC.writeMicroseconds(1000);
   delay(2000);
   return true;
 }

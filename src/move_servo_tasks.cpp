@@ -14,8 +14,8 @@ constexpr T clamp(T v, T lo, T hi)
 }
 
 int map_throttle(int cont_throttle)
-{ // recives 0 -1000 -> needs to be maped to 0 to 180
-    return (cont_throttle / 1000) * 180;
+{ // recives 0 -1000 -> needs to be maped to 0 to 100
+    return (cont_throttle / 1000.0) * 100;
 }
 
 void servos_to_neutral()
@@ -113,11 +113,11 @@ void set_servos(const SetServoStates_t *servoStates) // currently doesn't set th
 
     if (armed)
     {
-        ESC.write(servoStates->set_throttle);
+        ESC.writeMicroseconds(servoStates->set_throttle);
     }
     else
     {
-        ESC.write(0);
+        ESC.writeMicroseconds(1000);
     }
 }
 
