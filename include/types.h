@@ -146,8 +146,7 @@ typedef struct __attribute__((packed))
 typedef struct
 {
     float set_throttle;
-    float set_aileron, set_elevator, set_rudder;
-    bool flaps{false};
+    float set_aileron, set_elevator, set_rudder, set_flaps;
     bool release_drone{false};
 } SetServoStates_t;
 

@@ -27,6 +27,7 @@ float throttle = 0.0f;
 
 // Flap/release positions
 int flaps_deployed_loc = 45;
+int flaps_mid = 15;
 int flaps_retracted_loc = 0;
 int drone_release_close = 120;
 int drone_release_loc = 80;

@@ -38,18 +38,6 @@ volatile bool mavlinkGcsPresent = false;
 QueueHandle_t mavlinkRxQueue900 = nullptr;
 QueueHandle_t mavlinkRxQueue24 = nullptr;
 
-// manual
-
-Controller_t controllerData = {};
-SetServoStates_t servoStateData = {
-    aileron_neutral,  // set_aileron  = 16
-    elevator_neutral, // set_elevator = 20
-    rudder_neutral,   // set_rudder   = 30
-    0,                // set_throttle
-    false,            // flaps
-    false             // release_drone
-};
-
 // Logging Queues
 QueueHandle_t sensorData_logging_queue = nullptr;
 QueueHandle_t controlOutput_logging_queue = nullptr;
@@ -71,8 +59,8 @@ static void InitMavlinkRx()
     mavlinkRxQueue24 = xQueueCreate(QUEUE_SIZE, sizeof(MavlinkRxPacket_t));
 
     xTaskCreate(MavlinkRx900Task, "Rx900", STACK_DEPTH, NULL, *priority + 3, NULL);
-    //xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
-    //xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
+    // xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
+    // xTaskCreate(MavlinkRx24Task, "Rx24", STACK_DEPTH, NULL, *priority + 2, NULL);
     xTaskCreate(RxMavlinkProcess900PacketTask, "900MhzProces", RX_PROCESS_STACK_DEPTH, NULL, *priority + 2, NULL);
 }
 
@@ -126,7 +114,6 @@ void setup()
     controllerMutex = xSemaphoreCreateMutex();
     stateMutex = xSemaphoreCreateMutex();
     mavlinkDataMutex = xSemaphoreCreateMutex();
-    
 
     // xTaskCreate Paramenters:
     // pvTaskCode - Pointer to task
@@ -151,7 +138,7 @@ void setup()
     // manual
     xTaskCreate(writeServoTask, "ServoWrite", 1024, NULL, 1, NULL);
     xTaskCreate(updateStatesTask, "States", 1024, NULL, 2, NULL);
-    //xTaskCreate(radioTask, "ReadRadio(RX)", 1024, NULL, 3, NULL); TODO: REPLACE WITH MAVLink tasks
+    // xTaskCreate(radioTask, "ReadRadio(RX)", 1024, NULL, 3, NULL); TODO: REPLACE WITH MAVLink tasks
 
     vTaskStartScheduler();
 }
