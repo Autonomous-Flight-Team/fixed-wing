@@ -37,6 +37,7 @@ BaroData_t baroData = {0};
 ControlOutput_t controlOutput = {0};
 StateVector_t stateVector = {0};
 BlinkState_t blinkState = {false};
+FlapsPosition mavlinkFlapsPosition = FLAPS_DOWN;
 
 // Mavlink Manual Control - 900 Rx variables
 mavlink_set_position_target_global_int_t set_global_position = {};

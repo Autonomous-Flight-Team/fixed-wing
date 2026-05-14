@@ -19,6 +19,16 @@ typedef enum
 
 } DroneMode;
 
+// Flaps positions
+enum FlapsPosition
+{
+    FLAPS_UP = 0,
+    FLAPS_MID = 1,
+    FLAPS_DOWN = 2
+};
+
+extern FlapsPosition mavlinkFlapsPosition;
+
 // Mavlink relevant types
 typedef enum
 {

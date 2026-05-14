@@ -69,30 +69,39 @@ void ProcessPacket(const MavlinkRxPacket_t &pkt) {
             LockMavlinkData();
             mavlink_msg_manual_control_decode(&pkt.msg, &manual_control_data);
             ConstructLogAndFillQueue(manual_control_data);
-            //Serial.print("RECEIVED MANUAL CONTROL DATA ");
-
-            // Serial.println(manual_control_data.aux1);
-            // Serial.print("2: ");
-            
-            // Serial.println(manual_control_data.aux2);
-            // Serial.print("3: ");
-
-            // Serial.println(manual_control_data.aux3);
-            // Serial.print("4: ");
-
-            // Serial.println(manual_control_data.aux4);
-            // Serial.print("5: ");
-
-            // Serial.println(manual_control_data.aux5);
-            // Serial.print("6: ");
-
-            // Serial.println(manual_control_data.aux6);
-            //Serial.print("buttons: ");
-
-            //Serial.println(manual_control_data.buttons, 2);
-            // Serial.print("buttons2: ");
-
-            // Serial.println(manual_control_data.buttons2);
+            Serial.print("[MAVLINK][MANUAL_CONTROL] ");
+            Serial.print("target=");
+            Serial.print(manual_control_data.target);
+            Serial.print(" x=");
+            Serial.print(manual_control_data.x);
+            Serial.print(" y=");
+            Serial.print(manual_control_data.y);
+            Serial.print(" z=");
+            Serial.print(manual_control_data.z);
+            Serial.print(" r=");
+            Serial.print(manual_control_data.r);
+            Serial.print(" s=");
+            Serial.print(manual_control_data.s);
+            Serial.print(" t=");
+            Serial.print(manual_control_data.t);
+            Serial.print(" aux1=");
+            Serial.print(manual_control_data.aux1);
+            Serial.print(" aux2=");
+            Serial.print(manual_control_data.aux2);
+            Serial.print(" aux3=");
+            Serial.print(manual_control_data.aux3);
+            Serial.print(" aux4=");
+            Serial.print(manual_control_data.aux4);
+            Serial.print(" aux5=");
+            Serial.print(manual_control_data.aux5);
+            Serial.print(" aux6=");
+            Serial.print(manual_control_data.aux6);
+            Serial.print(" buttons=0x");
+            Serial.print(manual_control_data.buttons);
+            Serial.print(" buttons2=0x");
+            Serial.print(manual_control_data.buttons2);
+            Serial.print(" ext=0x");
+            Serial.println(manual_control_data.enabled_extensions);
 
             UpdateManualInputMetadataLocked();
             UnlockMavlinkData();
@@ -124,7 +133,29 @@ void ProcessPacket(const MavlinkRxPacket_t &pkt) {
 
         case MAVLINK_MSG_ID_COMMAND_LONG: {
             LockMavlinkData();
+            Serial.println("HI");
             mavlink_msg_command_long_decode(&pkt.msg, &specific_cmds);
+
+            if (specific_cmds.command == MAV_CMD_DO_SET_SERVO)
+            {
+                float pwm = specific_cmds.param2;
+                Serial.print("[FLAPS] PWM value: ");
+                Serial.println(pwm);
+
+                if (pwm < 1000.0f)
+                {
+                    mavlinkFlapsPosition = FLAPS_UP;
+                }
+                else if (pwm < 2000.0f)
+                {
+                    mavlinkFlapsPosition = FLAPS_MID;
+                }
+                else
+                {
+                    mavlinkFlapsPosition = FLAPS_DOWN;
+                }
+            }
+
             UnlockMavlinkData();
             break;
         }
@@ -136,11 +167,10 @@ void ProcessPacket(const MavlinkRxPacket_t &pkt) {
             break;
         }
 
-        default:
-            Serial.print("Unknown msgid: ");
-            Serial.println(pkt.msg.msgid);
+        
+            
         }
-}
+    }
 }  // namespace
 
 void RxMavlinkProcess900PacketTask(void *pvParameters) {

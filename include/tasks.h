@@ -75,6 +75,8 @@ extern volatile uint32_t barometer_logging_drop_count;
 extern volatile uint32_t gps_logging_drop_count;
 extern volatile uint32_t pitotTube_logging_drop_count;
 
+extern FlapsPosition mavlinkFlapsPosition;
+
 // Manual
 extern Controller_t controllerData;
 extern SemaphoreHandle_t controllerMutex;
