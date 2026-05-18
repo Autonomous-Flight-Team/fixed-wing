@@ -277,16 +277,15 @@ void setup()
     {
         FailStartup("Blink task creation failed");
     }
+    if (!InitLogging())
+    {
+        FailStartup("InitLogging failed");
+    }
     xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, kPriorityTwo, NULL);
 
     //  xTaskCreate(GPSTask, "GPS", STACK_DEPTH, NULL, kPriorityThree, NULL);
     // xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, kPriorityOne, NULL);
     // xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, kPriorityOne, NULL);
-
-    if (!InitLogging())
-    {
-        FailStartup("InitLogging failed");
-    }
     // if (!CreateTaskChecked(LoggingQueueSmokeTestTask, "LogQSmoke", STACK_DEPTH, kPriorityOne))
     // {
     //     FailStartup("LogQSmoke task creation failed");

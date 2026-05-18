@@ -12,7 +12,8 @@ Advik Sharma - github.com/jpyces
 
 void FillLoggingQueues(Log<StateVector_t> log)
 {
-    if (xQueueSend(stateVector_logging_queue, &log, 0) != pdTRUE) {
+    if (stateVector_logging_queue != nullptr &&
+        xQueueSend(stateVector_logging_queue, &log, 0) != pdTRUE) {
         ++stateVector_logging_drop_count;
     }
 
@@ -20,7 +21,8 @@ void FillLoggingQueues(Log<StateVector_t> log)
 
 void FillLoggingQueues(Log<IMUData_t> log)
 {
-    if (xQueueSend(imu_logging_queue, &log, 0) != pdTRUE)
+    if (imu_logging_queue != nullptr &&
+        xQueueSend(imu_logging_queue, &log, 0) != pdTRUE)
     {
         ++imu_logging_drop_count;
     }
@@ -28,7 +30,8 @@ void FillLoggingQueues(Log<IMUData_t> log)
 
 void FillLoggingQueues(Log<BaroData_t> log)
 {
-    if (xQueueSend(barometer_logging_queue, &log, 0) != pdTRUE)
+    if (barometer_logging_queue != nullptr &&
+        xQueueSend(barometer_logging_queue, &log, 0) != pdTRUE)
     {
         ++barometer_logging_drop_count;
     }
@@ -36,7 +39,8 @@ void FillLoggingQueues(Log<BaroData_t> log)
 
 void FillLoggingQueues(Log<GPSData_t> log)
 {
-    if (xQueueSend(gps_logging_queue, &log, 0) != pdTRUE)
+    if (gps_logging_queue != nullptr &&
+        xQueueSend(gps_logging_queue, &log, 0) != pdTRUE)
     {
         ++gps_logging_drop_count;
     }
@@ -44,7 +48,8 @@ void FillLoggingQueues(Log<GPSData_t> log)
 
 void FillLoggingQueues(Log<PitotData_t> log)
 {
-    if (xQueueSend(pitotTube_logging_queue, &log, 0) != pdTRUE)
+    if (pitotTube_logging_queue != nullptr &&
+        xQueueSend(pitotTube_logging_queue, &log, 0) != pdTRUE)
     {
         ++pitotTube_logging_drop_count;
     }
@@ -52,14 +57,16 @@ void FillLoggingQueues(Log<PitotData_t> log)
 
 void FillLoggingQueues(Log<ControlOutput_t> log)
 {
-    if (xQueueSend(controlOutput_logging_queue, &log, 0) != pdTRUE) {
+    if (controlOutput_logging_queue != nullptr &&
+        xQueueSend(controlOutput_logging_queue, &log, 0) != pdTRUE) {
         ++controlOutput_logging_drop_count;
     }
 }
 
 void FillLoggingQueues(Log<mavlink_manual_control_t> log)
 {
-    if (xQueueSend(manualControl_t_logging_queue, &log, 0) != pdTRUE) {
+    if (manualControl_t_logging_queue != nullptr &&
+        xQueueSend(manualControl_t_logging_queue, &log, 0) != pdTRUE) {
         ++manualControl_logging_drop_count;
     }
 }
@@ -108,6 +115,8 @@ void SDCardTask(void *pvParameters)
 
     const TickType_t consumePeriod = pdMS_TO_TICKS(400);
     TickType_t lastWake = xTaskGetTickCount();
+    const TickType_t flushPeriod = pdMS_TO_TICKS(1000);
+    TickType_t lastFlush = lastWake;
 
     Log<IMUData_t> imuLog = {};
     Log<ControlOutput_t> controlLog = {};
@@ -125,7 +134,7 @@ void SDCardTask(void *pvParameters)
             if (controlOutput_logging_queue != nullptr &&
                 xQueueReceive(controlOutput_logging_queue, &controlLog, 0) == pdTRUE)
             {
-                SD_Log_t sdControlLog = new SD_Log_t(controlLog.data);
+                SD_Log_t<ControlOutput_t> sdControlLog(controlLog.data);
                 sdControlLog.timestamp = controlLog.timestamp;
                 writeLogBinary("CTRL", sdControlLog, dataFile);
             }
@@ -133,7 +142,7 @@ void SDCardTask(void *pvParameters)
             if (stateVector_logging_queue != nullptr &&
                 xQueueReceive(stateVector_logging_queue, &stateLog, 0) == pdTRUE)
             {
-                SD_Log_t sdStateLog = new SD_Log_t(stateLog.data);
+                SD_Log_t<StateVector_t> sdStateLog(stateLog.data);
                 sdStateLog.timestamp = stateLog.timestamp;
                 writeLogBinary("State_Vector", sdStateLog, dataFile);
             }
@@ -141,7 +150,7 @@ void SDCardTask(void *pvParameters)
             if (manualControl_t_logging_queue != nullptr &&
                 xQueueReceive(manualControl_t_logging_queue, &manualLog, 0) == pdTRUE)
             {
-                SD_Log_t sdManualLog = new SD_Log_t(manualLog.data);
+                SD_Log_t<mavlink_manual_control_t> sdManualLog(manualLog.data);
                 sdManualLog.timestamp = manualLog.timestamp;
                 writeLogBinary("Manual_Controller", sdManualLog, dataFile);
             }
@@ -149,7 +158,7 @@ void SDCardTask(void *pvParameters)
             if (imu_logging_queue != nullptr &&
                 xQueueReceive(imu_logging_queue, &imuLog, 0) == pdTRUE)
             {
-                SD_Log_t sdIMULog = new SD_Log_t(imuLog.data);
+                SD_Log_t<IMUData_t> sdIMULog(imuLog.data);
                 sdIMULog.timestamp = imuLog.timestamp;
                 writeLogBinary("IMU", sdIMULog, dataFile);
             }
@@ -157,7 +166,7 @@ void SDCardTask(void *pvParameters)
             if (barometer_logging_queue != nullptr &&
                 xQueueReceive(barometer_logging_queue, &baroLog, 0) == pdTRUE)
             {
-                SD_Log_t sdBarometerLog = new SD_Log_t(baroLog.data);
+                SD_Log_t<BaroData_t> sdBarometerLog(baroLog.data);
                 sdBarometerLog.timestamp = baroLog.timestamp;
                 writeLogBinary("BARO", sdBarometerLog, dataFile);
                 //dataFile.println(baroLog.data);
@@ -166,7 +175,7 @@ void SDCardTask(void *pvParameters)
             if (gps_logging_queue != nullptr &&
                 xQueueReceive(gps_logging_queue, &gpsLog, 0) == pdTRUE)
             {
-                SD_Log_t sdGPSLog = new SD_Log_t(gpsLog.data);
+                SD_Log_t<GPSData_t> sdGPSLog(gpsLog.data);
                 sdGPSLog.timestamp = gpsLog.timestamp;
                 writeLogBinary("GPS", sdGPSLog, dataFile);
             }
@@ -174,15 +183,16 @@ void SDCardTask(void *pvParameters)
             if (pitotTube_logging_queue != nullptr &&
                 xQueueReceive(pitotTube_logging_queue, &pitotLog, 0) == pdTRUE)
             {
-                SD_Log_t sdPitotLog = new SD_Log_t(pitotLog.data);
+                SD_Log_t<PitotData_t> sdPitotLog(pitotLog.data);
                 sdPitotLog.timestamp = pitotLog.timestamp;
                 writeLogBinary("Pitot", sdPitotLog, dataFile);
             }
 
-            if (dataFile)
-            {                
-                // Use flush instead of close to save data periodically
+            const TickType_t now = xTaskGetTickCount();
+            if ((now - lastFlush) >= flushPeriod)
+            {
                 dataFile.flush();
+                lastFlush = now;
             }
         }
 
