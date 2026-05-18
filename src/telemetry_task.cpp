@@ -113,10 +113,11 @@ void SDCardTask(void *pvParameters)
         dataFile.println("Logging started...");
     }
 
-    const TickType_t consumePeriod = pdMS_TO_TICKS(400);
+    const TickType_t consumePeriod = pdMS_TO_TICKS(20);
     TickType_t lastWake = xTaskGetTickCount();
     const TickType_t flushPeriod = pdMS_TO_TICKS(1000);
     TickType_t lastFlush = lastWake;
+    const uint16_t maxMessagesPerCycle = 200U;
 
     Log<IMUData_t> imuLog = {};
     Log<ControlOutput_t> controlLog = {};
@@ -131,61 +132,76 @@ void SDCardTask(void *pvParameters)
         
         if (dataFile)
         {
-            if (controlOutput_logging_queue != nullptr &&
-                xQueueReceive(controlOutput_logging_queue, &controlLog, 0) == pdTRUE)
+            uint16_t drainedThisCycle = 0U;
+            while (drainedThisCycle < maxMessagesPerCycle &&
+                   controlOutput_logging_queue != nullptr &&
+                   xQueueReceive(controlOutput_logging_queue, &controlLog, 0) == pdTRUE)
             {
                 SD_Log_t<ControlOutput_t> sdControlLog(controlLog.data);
                 sdControlLog.timestamp = controlLog.timestamp;
                 writeLogBinary("CTRL", sdControlLog, dataFile);
+                ++drainedThisCycle;
             }
 
-            if (stateVector_logging_queue != nullptr &&
-                xQueueReceive(stateVector_logging_queue, &stateLog, 0) == pdTRUE)
+            while (drainedThisCycle < maxMessagesPerCycle &&
+                   stateVector_logging_queue != nullptr &&
+                   xQueueReceive(stateVector_logging_queue, &stateLog, 0) == pdTRUE)
             {
                 SD_Log_t<StateVector_t> sdStateLog(stateLog.data);
                 sdStateLog.timestamp = stateLog.timestamp;
                 writeLogBinary("State_Vector", sdStateLog, dataFile);
+                ++drainedThisCycle;
             }
 
-            if (manualControl_t_logging_queue != nullptr &&
-                xQueueReceive(manualControl_t_logging_queue, &manualLog, 0) == pdTRUE)
+            while (drainedThisCycle < maxMessagesPerCycle &&
+                   manualControl_t_logging_queue != nullptr &&
+                   xQueueReceive(manualControl_t_logging_queue, &manualLog, 0) == pdTRUE)
             {
                 SD_Log_t<mavlink_manual_control_t> sdManualLog(manualLog.data);
                 sdManualLog.timestamp = manualLog.timestamp;
                 writeLogBinary("Manual_Controller", sdManualLog, dataFile);
+                ++drainedThisCycle;
             }
 
-            if (imu_logging_queue != nullptr &&
-                xQueueReceive(imu_logging_queue, &imuLog, 0) == pdTRUE)
+            while (drainedThisCycle < maxMessagesPerCycle &&
+                   imu_logging_queue != nullptr &&
+                   xQueueReceive(imu_logging_queue, &imuLog, 0) == pdTRUE)
             {
                 SD_Log_t<IMUData_t> sdIMULog(imuLog.data);
                 sdIMULog.timestamp = imuLog.timestamp;
                 writeLogBinary("IMU", sdIMULog, dataFile);
+                ++drainedThisCycle;
             }
 
-            if (barometer_logging_queue != nullptr &&
-                xQueueReceive(barometer_logging_queue, &baroLog, 0) == pdTRUE)
+            while (drainedThisCycle < maxMessagesPerCycle &&
+                   barometer_logging_queue != nullptr &&
+                   xQueueReceive(barometer_logging_queue, &baroLog, 0) == pdTRUE)
             {
                 SD_Log_t<BaroData_t> sdBarometerLog(baroLog.data);
                 sdBarometerLog.timestamp = baroLog.timestamp;
                 writeLogBinary("BARO", sdBarometerLog, dataFile);
                 //dataFile.println(baroLog.data);
+                ++drainedThisCycle;
             }
 
-            if (gps_logging_queue != nullptr &&
-                xQueueReceive(gps_logging_queue, &gpsLog, 0) == pdTRUE)
+            while (drainedThisCycle < maxMessagesPerCycle &&
+                   gps_logging_queue != nullptr &&
+                   xQueueReceive(gps_logging_queue, &gpsLog, 0) == pdTRUE)
             {
                 SD_Log_t<GPSData_t> sdGPSLog(gpsLog.data);
                 sdGPSLog.timestamp = gpsLog.timestamp;
                 writeLogBinary("GPS", sdGPSLog, dataFile);
+                ++drainedThisCycle;
             }
 
-            if (pitotTube_logging_queue != nullptr &&
-                xQueueReceive(pitotTube_logging_queue, &pitotLog, 0) == pdTRUE)
+            while (drainedThisCycle < maxMessagesPerCycle &&
+                   pitotTube_logging_queue != nullptr &&
+                   xQueueReceive(pitotTube_logging_queue, &pitotLog, 0) == pdTRUE)
             {
                 SD_Log_t<PitotData_t> sdPitotLog(pitotLog.data);
                 sdPitotLog.timestamp = pitotLog.timestamp;
                 writeLogBinary("Pitot", sdPitotLog, dataFile);
+                ++drainedThisCycle;
             }
 
             const TickType_t now = xTaskGetTickCount();
