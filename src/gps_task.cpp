@@ -35,13 +35,19 @@ void GPSTask(void *pvParameters) {
 
     for (;;) {
         SensorData_t gpsData = ReadGPS();
+        GPSData_t gpsLogData = {};
         if (xSemaphoreTake(dataMutex, portMAX_DELAY)) {
             sensorData.lat = gpsData.lat;
             sensorData.lon = gpsData.lon;
             sensorData.gps_altitude = gpsData.gps_altitude;
             sensorData.vs = gpsData.vs;
+            gpsLogData.lat = gpsData.lat;
+            gpsLogData.lon = gpsData.lon;
+            gpsLogData.gps_altitude = gpsData.gps_altitude;
+            gpsLogData.vs = gpsData.vs;
             xSemaphoreGive(dataMutex);
         }
+        ConstructLogAndFillQueue(gpsLogData);
         vTaskDelayUntil(&lastWake, freq);
     }
 }

@@ -117,7 +117,9 @@ void SDCardTask(void *pvParameters)
     TickType_t lastWake = xTaskGetTickCount();
     const TickType_t flushPeriod = pdMS_TO_TICKS(1000);
     TickType_t lastFlush = lastWake;
+    const TickType_t holdWritePeriod = pdMS_TO_TICKS(1000);
     const uint16_t maxMessagesPerCycle = 200U;
+    uint8_t nextQueueStart = 0U;
 
     Log<IMUData_t> imuLog = {};
     Log<ControlOutput_t> controlLog = {};
@@ -127,84 +129,139 @@ void SDCardTask(void *pvParameters)
     Log<GPSData_t> gpsLog = {};
     Log<PitotData_t> pitotLog = {};
 
+    SD_Log_t<ControlOutput_t> heldControl = {};
+    SD_Log_t<StateVector_t> heldState = {};
+    SD_Log_t<PitotData_t> heldPitot = {};
+    TickType_t lastControlSeen = lastWake;
+    TickType_t lastStateSeen = lastWake;
+    TickType_t lastPitotSeen = lastWake;
+
     for (;;)
     {
         
         if (dataFile)
         {
             uint16_t drainedThisCycle = 0U;
-            while (drainedThisCycle < maxMessagesPerCycle &&
-                   controlOutput_logging_queue != nullptr &&
-                   xQueueReceive(controlOutput_logging_queue, &controlLog, 0) == pdTRUE)
+            bool madeProgress = true;
+            while (drainedThisCycle < maxMessagesPerCycle && madeProgress)
             {
-                SD_Log_t<ControlOutput_t> sdControlLog(controlLog.data);
-                sdControlLog.timestamp = controlLog.timestamp;
-                writeLogBinary("CTRL", sdControlLog, dataFile);
-                ++drainedThisCycle;
+                madeProgress = false;
+                for (uint8_t i = 0; i < 7U && drainedThisCycle < maxMessagesPerCycle; ++i)
+                {
+                    const uint8_t queueIndex = static_cast<uint8_t>((nextQueueStart + i) % 7U);
+                    switch (queueIndex)
+                    {
+                    case 0:
+                        if (controlOutput_logging_queue != nullptr &&
+                            xQueueReceive(controlOutput_logging_queue, &controlLog, 0) == pdTRUE)
+                        {
+                            SD_Log_t<ControlOutput_t> sdControlLog(controlLog.data);
+                            sdControlLog.timestamp = controlLog.timestamp;
+                            writeLogBinary("CTRL", sdControlLog, dataFile);
+                            heldControl = sdControlLog;
+                            lastControlSeen = xTaskGetTickCount();
+                            ++drainedThisCycle;
+                            madeProgress = true;
+                        }
+                        break;
+                    case 1:
+                        if (stateVector_logging_queue != nullptr &&
+                            xQueueReceive(stateVector_logging_queue, &stateLog, 0) == pdTRUE)
+                        {
+                            SD_Log_t<StateVector_t> sdStateLog(stateLog.data);
+                            sdStateLog.timestamp = stateLog.timestamp;
+                            writeLogBinary("State_Vector", sdStateLog, dataFile);
+                            heldState = sdStateLog;
+                            lastStateSeen = xTaskGetTickCount();
+                            ++drainedThisCycle;
+                            madeProgress = true;
+                        }
+                        break;
+                    case 2:
+                        if (manualControl_t_logging_queue != nullptr &&
+                            xQueueReceive(manualControl_t_logging_queue, &manualLog, 0) == pdTRUE)
+                        {
+                            SD_Log_t<mavlink_manual_control_t> sdManualLog(manualLog.data);
+                            sdManualLog.timestamp = manualLog.timestamp;
+                            writeLogBinary("Manual_Controller", sdManualLog, dataFile);
+                            ++drainedThisCycle;
+                            madeProgress = true;
+                        }
+                        break;
+                    case 3:
+                        if (imu_logging_queue != nullptr &&
+                            xQueueReceive(imu_logging_queue, &imuLog, 0) == pdTRUE)
+                        {
+                            SD_Log_t<IMUData_t> sdIMULog(imuLog.data);
+                            sdIMULog.timestamp = imuLog.timestamp;
+                            writeLogBinary("IMU", sdIMULog, dataFile);
+                            ++drainedThisCycle;
+                            madeProgress = true;
+                        }
+                        break;
+                    case 4:
+                        if (barometer_logging_queue != nullptr &&
+                            xQueueReceive(barometer_logging_queue, &baroLog, 0) == pdTRUE)
+                        {
+                            SD_Log_t<BaroData_t> sdBarometerLog(baroLog.data);
+                            sdBarometerLog.timestamp = baroLog.timestamp;
+                            writeLogBinary("BARO", sdBarometerLog, dataFile);
+                            ++drainedThisCycle;
+                            madeProgress = true;
+                        }
+                        break;
+                    case 5:
+                        if (gps_logging_queue != nullptr &&
+                            xQueueReceive(gps_logging_queue, &gpsLog, 0) == pdTRUE)
+                        {
+                            SD_Log_t<GPSData_t> sdGPSLog(gpsLog.data);
+                            sdGPSLog.timestamp = gpsLog.timestamp;
+                            writeLogBinary("GPS", sdGPSLog, dataFile);
+                            ++drainedThisCycle;
+                            madeProgress = true;
+                        }
+                        break;
+                    case 6:
+                        if (pitotTube_logging_queue != nullptr &&
+                            xQueueReceive(pitotTube_logging_queue, &pitotLog, 0) == pdTRUE)
+                        {
+                            SD_Log_t<PitotData_t> sdPitotLog(pitotLog.data);
+                            sdPitotLog.timestamp = pitotLog.timestamp;
+                            writeLogBinary("Pitot", sdPitotLog, dataFile);
+                            heldPitot = sdPitotLog;
+                            lastPitotSeen = xTaskGetTickCount();
+                            ++drainedThisCycle;
+                            madeProgress = true;
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+                }
             }
-
-            while (drainedThisCycle < maxMessagesPerCycle &&
-                   stateVector_logging_queue != nullptr &&
-                   xQueueReceive(stateVector_logging_queue, &stateLog, 0) == pdTRUE)
-            {
-                SD_Log_t<StateVector_t> sdStateLog(stateLog.data);
-                sdStateLog.timestamp = stateLog.timestamp;
-                writeLogBinary("State_Vector", sdStateLog, dataFile);
-                ++drainedThisCycle;
-            }
-
-            while (drainedThisCycle < maxMessagesPerCycle &&
-                   manualControl_t_logging_queue != nullptr &&
-                   xQueueReceive(manualControl_t_logging_queue, &manualLog, 0) == pdTRUE)
-            {
-                SD_Log_t<mavlink_manual_control_t> sdManualLog(manualLog.data);
-                sdManualLog.timestamp = manualLog.timestamp;
-                writeLogBinary("Manual_Controller", sdManualLog, dataFile);
-                ++drainedThisCycle;
-            }
-
-            while (drainedThisCycle < maxMessagesPerCycle &&
-                   imu_logging_queue != nullptr &&
-                   xQueueReceive(imu_logging_queue, &imuLog, 0) == pdTRUE)
-            {
-                SD_Log_t<IMUData_t> sdIMULog(imuLog.data);
-                sdIMULog.timestamp = imuLog.timestamp;
-                writeLogBinary("IMU", sdIMULog, dataFile);
-                ++drainedThisCycle;
-            }
-
-            while (drainedThisCycle < maxMessagesPerCycle &&
-                   barometer_logging_queue != nullptr &&
-                   xQueueReceive(barometer_logging_queue, &baroLog, 0) == pdTRUE)
-            {
-                SD_Log_t<BaroData_t> sdBarometerLog(baroLog.data);
-                sdBarometerLog.timestamp = baroLog.timestamp;
-                writeLogBinary("BARO", sdBarometerLog, dataFile);
-                //dataFile.println(baroLog.data);
-                ++drainedThisCycle;
-            }
-
-            while (drainedThisCycle < maxMessagesPerCycle &&
-                   gps_logging_queue != nullptr &&
-                   xQueueReceive(gps_logging_queue, &gpsLog, 0) == pdTRUE)
-            {
-                SD_Log_t<GPSData_t> sdGPSLog(gpsLog.data);
-                sdGPSLog.timestamp = gpsLog.timestamp;
-                writeLogBinary("GPS", sdGPSLog, dataFile);
-                ++drainedThisCycle;
-            }
-
-            while (drainedThisCycle < maxMessagesPerCycle &&
-                   pitotTube_logging_queue != nullptr &&
-                   xQueueReceive(pitotTube_logging_queue, &pitotLog, 0) == pdTRUE)
-            {
-                SD_Log_t<PitotData_t> sdPitotLog(pitotLog.data);
-                sdPitotLog.timestamp = pitotLog.timestamp;
-                writeLogBinary("Pitot", sdPitotLog, dataFile);
-                ++drainedThisCycle;
-            }
+            nextQueueStart = static_cast<uint8_t>((nextQueueStart + 1U) % 7U);
 
             const TickType_t now = xTaskGetTickCount();
+
+            if ((now - lastControlSeen) >= holdWritePeriod)
+            {
+                heldControl.timestamp = now;
+                writeLogBinary("CTRL_HOLD", heldControl, dataFile);
+                lastControlSeen = now;
+            }
+            if ((now - lastStateSeen) >= holdWritePeriod)
+            {
+                heldState.timestamp = now;
+                writeLogBinary("STATE_HOLD", heldState, dataFile);
+                lastStateSeen = now;
+            }
+            if ((now - lastPitotSeen) >= holdWritePeriod)
+            {
+                heldPitot.timestamp = now;
+                writeLogBinary("PITOT_HOLD", heldPitot, dataFile);
+                lastPitotSeen = now;
+            }
+
             if ((now - lastFlush) >= flushPeriod)
             {
                 dataFile.flush();

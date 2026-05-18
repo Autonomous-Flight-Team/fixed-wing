@@ -116,6 +116,7 @@ void printControllerTask(void *pvParameters);
 // Logging task Declarations
 void SDCardTask(void *pvParameters);
 void LoggingQueueSmokeTestTask(void *pvParameters);
+void PlaceholderLogProducerTask(void *pvParameters);
 template <typename T>
 void FillLoggingQueues(Log<T> log) = delete;
 void FillLoggingQueues(Log<StateVector_t> log);
@@ -146,7 +147,7 @@ inline void writeLogBinary(const char *tag, const SD_Log_t<T> &log, File &f)
     if (f)
     {
         f.print(tag); // Write a 4-char ID like "IMU," or "BARO"
-        f.write((const uint8_t *)&log, sizeof(Log<T>));
+        f.write(reinterpret_cast<const uint8_t *>(&log), sizeof(SD_Log_t<T>));
         f.println(); // Optional: helps visually separate if you open in a hex editor
     }
 }
