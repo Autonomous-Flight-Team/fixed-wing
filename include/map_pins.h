@@ -39,6 +39,7 @@ constexpr float DEADZONE = 10;
 
 // Flap/release positions
 extern int flaps_deployed_loc;
+extern int flaps_mid;
 extern int flaps_retracted_loc;
 extern int drone_release_loc;
 extern int drone_release_close;

@@ -49,6 +49,7 @@ volatile uint32_t sensorData_logging_drop_count = 0;
 volatile uint32_t controlOutput_logging_drop_count = 0;
 volatile uint32_t stateVector_logging_drop_count = 0;
 volatile uint32_t manualControl_logging_drop_count = 0;
+SetServoStates_t servoStateData;
 
 DroneMode droneMode = MANUAL; // Perhaps use mavlinks version, or update custom mavlink cmd
 
@@ -123,7 +124,7 @@ void setup()
     // uxPriority - Priority level (lower is more priority)
     // pxCreatedTask - Pointer to task handle
     xTaskCreate(BlinkTask, "Blink", STACK_DEPTH, NULL, *priority, NULL);
-    // xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, *priority + 1, NULL);
+    xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, *priority + 1, NULL);
     //  xTaskCreate(GPSTask, "GPS", STACK_DEPTH, NULL, *priority + 2, NULL);
     // xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, *priority, NULL);
     // xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);

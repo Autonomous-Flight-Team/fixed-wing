@@ -48,7 +48,8 @@ void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servo
         controllerData->r = 0;
     }
 
-    servoStates->set_throttle = map_throttle(controllerData->z); // passes 0 -1000 -> needs to be maped to 0 to 100
+    servoStates->set_throttle = map_throttle(controllerData->z) + 1000; // passes 0 -1000 -> needs to be maped to 0 to 100
+
     servoStates->set_elevator = clamp(servoStates->set_elevator + controllerData->x * elevator_rate, (float)0, elevator_limit);
     servoStates->set_aileron = clamp(servoStates->set_aileron + controllerData->y * aileron_rate, (float)0, aileron_limit);
     servoStates->set_rudder = clamp(servoStates->set_rudder + controllerData->r * rudder_rate, (float)0, rudder_limit);
@@ -57,11 +58,11 @@ void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servo
     for (int i = 0; i < 16; i++)
     {
         buttonState[i] = (controllerData->buttons >> i) & 1;
-        // Serial.print(buttonState[i]);
+        Serial.print(buttonState[i]);
     }
-    // Serial.println();
+    Serial.println();
 
-    if (buttonState[2])
+    if (buttonState[5])
     {
         servoStates->release_drone = true;
     }
@@ -77,15 +78,30 @@ void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servo
         servoStates->set_elevator = elevator_neutral;
     }
 
-    if (buttonState[11])
+    if (buttonState[0])
     {
         armed = true;
     }
+    else
+    {
+        armed = false;
+    }
 
     // flaps
-    if (true)
+
+    if (buttonState[2])
     {
-        servoStates->flaps = flaps_retracted_loc;
+        servoStates->set_flaps = flaps_retracted_loc;
+    }
+
+    else if (buttonState[4])
+    {
+        servoStates->set_flaps = flaps_deployed_loc;
+    }
+
+    else
+    {
+        servoStates->set_flaps = flaps_mid;
     }
 }
 
@@ -96,17 +112,17 @@ void set_servos(const SetServoStates_t *servoStates) // currently doesn't set th
     rudder_servo.write(servoStates->set_rudder);
     left_aileron_servo.write(aileron_limit - servoStates->set_aileron);
     right_aileron_servo.write(servoStates->set_aileron);
-    flap_servo.write(servoStates->flaps);
+    flap_servo.write(servoStates->set_flaps);
 
     if (servoStates->release_drone)
     {
         drone_release_servo.write(drone_release_loc);
-        Serial.println("Release");
+        // Serial.println("Release");
     }
     else
     {
         drone_release_servo.write(drone_release_close);
-        Serial.println("Close");
+        // Serial.println("Close");
     }
 
     if (armed)
