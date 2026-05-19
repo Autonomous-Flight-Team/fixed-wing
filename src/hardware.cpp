@@ -1,40 +1,39 @@
 // Authors
 // - Colin Faletto github.com/faletto
 
+
 #include "hardware.h"
 
 ICM_20948_I2C imu;
 Adafruit_BMP3XX bmp;
 TinyGPSPlus gps;
-Adafruit_LSM9DS1 lsm;
+
+#define IMU_SDA 18
+#define IMU_SCL 19
 
 // Initializes the IMU
-bool ImuInit()
-{
+bool ImuInit() {
     Wire.begin();
-    if (!lsm.begin())
+    if (imu.begin(Wire) != ICM_20948_Stat_Ok) {
+        Serial.println("IMU failed :(");
         return false;
-    lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_2G);
-    lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_245DPS);
-    lsm.setupMag(lsm.LSM9DS1_MAGGAIN_4GAUSS);
+    }
     return true;
 }
 
 // Initializes the Barometer
-bool BaroInit()
-{
-    Wire2.begin(); // SDA2=25, SCL2=24
-    if (!bmp.begin_I2C(0x76, &Wire2))
+bool BaroInit() {
+    if (!bmp.begin_I2C()) {
+        Serial.println("Barometer failed :(");
         return false;
-
+    }
     return true;
 }
 
 int GPS_BAUD = 9600;
 
 // Initializes the GPS
-bool GPSInit()
-{
+bool GPSInit() {
     gpsSerial.begin(GPS_BAUD);
     return true;
 }

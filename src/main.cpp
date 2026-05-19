@@ -64,6 +64,18 @@ QueueHandle_t mavlinkRxQueue24 = nullptr;
 QueueHandle_t mavlinkQgcHandshakeQueue = nullptr;
 QueueHandle_t mavlinkRx24_QuadcopterOrigin_ForwardQueue = nullptr;
 
+// manual
+
+Controller_t controllerData = {};
+SetServoStates_t servoStateData = {
+    aileron_neutral,  // set_aileron  = 16
+    elevator_neutral, // set_elevator = 20
+    rudder_neutral,   // set_rudder   = 30
+    0,                // set_throttle
+    false,            // flaps
+    false             // release_drone
+};
+
 // Logging Queues
 QueueHandle_t controlOutput_logging_queue = nullptr;
 QueueHandle_t stateVector_logging_queue = nullptr;

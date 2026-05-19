@@ -18,19 +18,16 @@ volatile uint32_t mavlinkTelemetryCount = 0;
 
 // Purpose: Parse MAVLink from the 900 MHz UART and enqueue full messages.
 // Structure: Tight read/parse loop + periodic delay to bound CPU usage.
-void MavlinkRx900Task(void *pvParameters)
-{
+void MavlinkRx900Task(void *pvParameters) {
     TickType_t lastWake = xTaskGetTickCount();
-    const TickType_t freq = pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK);
+    const TickType_t freq = pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK); 
     mavlink_message_t msg;
     mavlink_status_t status;
 
-    for (;;)
-    {
-        // uint32_t time = micros();
-        // Serial.println("Task Start");
-        while (MAVLINK_SERIAL_900.available() > 0)
-        {
+    for (;;) {
+        //uint32_t time = micros();
+        //Serial.println("Task Start");
+        while (MAVLINK_SERIAL_900.available() > 0) {
             uint8_t c = static_cast<uint8_t>(MAVLINK_SERIAL_900.read());
             //Serial.print("RAWWWW 900: ");
             //Serial.println(c); 
@@ -39,25 +36,23 @@ void MavlinkRx900Task(void *pvParameters)
                 MavlinkRxPacket_t pkt;
                 pkt.link = LINK_900MHZ;
                 pkt.msg = msg;
-                // Serial.println("900 Mhz received!");
+                //Serial.println("900 Mhz received!");
                 xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);
-                if (xQueueSend(mavlinkRxQueue900, &pkt, 0) != pdTRUE)
-                {
+                if (xQueueSend(mavlinkRxQueue900, &pkt, 0) != pdTRUE) {
                     ++mavlinkRxDrop900;
                 }
                 xSemaphoreGive(mavlinkDataMutex);
             }
         }
-        // Serial.println("Outside while loop");
-        // Serial.println(micros()-time);
+        //Serial.println("Outside while loop");
+        //Serial.println(micros()-time);
         vTaskDelayUntil(&lastWake, freq);
     }
 }
 
 // Purpose: Parse MAVLink from the 2.4 GHz UART and enqueue full messages.
 // Structure: Mirrors 900 MHz RX to keep link handling symmetric.
-void MavlinkRx24Task(void *pvParameters)
-{
+void MavlinkRx24Task(void *pvParameters) {
     TickType_t lastWake = xTaskGetTickCount();
     const TickType_t freq = pdMS_TO_TICKS(RX_SLOW_MS_PER_TICK);
     mavlink_message_t msg;
