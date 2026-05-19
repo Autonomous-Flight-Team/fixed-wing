@@ -30,7 +30,6 @@ int RX_PROCESS_STACK_DEPTH = 1536;
 //int priority[] = {1, 2, 3, 4};
 static constexpr bool kEnableSimulatedLocationSensorTask = true;
 static constexpr bool kEnableSerial3LoopbackSelfTestTask = false;
-static constexpr bool kEnablePlaceholderLogProducerTask = true;
 
 SensorData_t sensorData = {0};
 IMUData_t imuData = {0};
@@ -283,15 +282,8 @@ void setup()
         FailStartup("InitLogging failed");
     }
     xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, kPriorityTwo, NULL);
-    if (!CreateTaskChecked(GPSTask, "GPS", STACK_DEPTH, kPriorityThree))
-    {
-        FailStartup("GPS task creation failed");
-    }
-    if (kEnablePlaceholderLogProducerTask &&
-        !CreateTaskChecked(PlaceholderLogProducerTask, "LogPlaceholder", STACK_DEPTH, kPriorityOne))
-    {
-        FailStartup("LogPlaceholder task creation failed");
-    }
+
+    //  xTaskCreate(GPSTask, "GPS", STACK_DEPTH, NULL, kPriorityThree, NULL);
     // xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, kPriorityOne, NULL);
     // xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, kPriorityOne, NULL);
     // if (!CreateTaskChecked(LoggingQueueSmokeTestTask, "LogQSmoke", STACK_DEPTH, kPriorityOne))
