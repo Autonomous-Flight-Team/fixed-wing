@@ -19,6 +19,16 @@ typedef enum
 
 } DroneMode;
 
+// Flaps positions
+enum FlapsPosition
+{
+    FLAPS_UP = 0,
+    FLAPS_MID = 1,
+    FLAPS_DOWN = 2
+};
+
+extern FlapsPosition mavlinkFlapsPosition;
+
 // Mavlink relevant types
 typedef enum
 {
@@ -44,6 +54,37 @@ struct Log
 
     TickType_t timestamp;
 };
+
+typedef struct
+{
+    // Linear Acceleration
+    float ax, ay, az;
+    // Rotational Velocity
+    float gx, gy, gz;
+} IMUData_t;
+
+typedef struct
+{
+    // Barometer
+    float altitude;
+    float pressure;
+    float temp;
+} BaroData_t;
+
+typedef struct
+{
+    // GPS
+    // Latitude
+    double lat;
+    // Longitude
+    double lon;
+    float gps_altitude;
+    // Linear Velocity
+    float vs;
+} GPSData_t;
+
+typedef struct {} PitotData_t;
+
 
 typedef struct
 {
@@ -149,5 +190,22 @@ typedef struct
     float set_aileron, set_elevator, set_rudder, set_flaps;
     bool release_drone{false};
 } SetServoStates_t;
+
+// New struct for putting logs into sdcard in binary - gets rid of packing that can confuse binary
+// decoder - efficiency and separation between ram and persistence memory
+#pragma pack(push, 1)
+template <typename T>
+struct SD_Log_t
+{
+    T data;
+    // Default constructor: handles cases where no value is provided
+    SD_Log_t() : data() {}
+
+    // Parameterized constructor: takes a value and moves it into 'data'
+    SD_Log_t(T value) : data(value) {}
+
+    TickType_t timestamp;
+};
+#pragma pack(pop) // End: Return to normal
 
 #endif

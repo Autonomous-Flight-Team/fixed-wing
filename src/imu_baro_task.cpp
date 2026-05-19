@@ -46,14 +46,11 @@ void ImuBaroTask(void *pvParameters)
 {
     TickType_t lastWake = xTaskGetTickCount();
     const TickType_t freq = pdMS_TO_TICKS(MS_PER_TICK);
-
-    for (;;)
-    {
-        SensorData_t newData = ReadImuBaro();
-        if (xSemaphoreTake(dataMutex, portMAX_DELAY))
-        {
-            sensorData = newData;
-            Serial.println(sensorData.ax);
+    
+    for (;;) {
+        if (xSemaphoreTake(dataMutex, portMAX_DELAY)) {
+            ReadIMU(&imuData);
+            ReadBaro(&baroData);
             xSemaphoreGive(dataMutex);
         }
         vTaskDelayUntil(&lastWake, freq);

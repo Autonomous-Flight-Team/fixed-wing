@@ -7,7 +7,7 @@
 
 void servos_to_neutral();
 
-bool intialize_servo_control()
+bool initialize_servo_control()
 {
   // Set all digital pins to OUTPUT
   pinMode(left_aileron_pin, OUTPUT);
@@ -48,7 +48,7 @@ bool initialize_esc()
   return true;
 }
 
-bool intialize_manual_control()
+bool initialize_manual_control()
 {
-  return intialize_servo_control() && initialize_esc();
+  return initialize_servo_control() && initialize_esc();
 }
