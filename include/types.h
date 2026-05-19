@@ -173,22 +173,13 @@ typedef struct
 
 } Controller_t;
 
-// Reads from MAVLink (Holds controller info without overriding current controller info)
-typedef struct __attribute__((packed))
-{
-    float left_trig, right_trig;
-    float left_bump, right_bump;
-    float pitch_joystick;
-    float roll_joystick;
-    uint8_t Y, A, X, B;
-} Controller_raw_t;
-
 // Holds Servo states
 typedef struct
 {
     float set_throttle;
-    float set_aileron, set_elevator, set_rudder, set_flaps;
-    bool release_drone{false};
+    float set_aileron, set_elevator, set_rudder;
+    bool flaps;
+    bool release_drone;
 } SetServoStates_t;
 
 // New struct for putting logs into sdcard in binary - gets rid of packing that can confuse binary
