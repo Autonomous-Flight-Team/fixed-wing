@@ -64,18 +64,6 @@ QueueHandle_t mavlinkRxQueue24 = nullptr;
 QueueHandle_t mavlinkQgcHandshakeQueue = nullptr;
 QueueHandle_t mavlinkRx24_QuadcopterOrigin_ForwardQueue = nullptr;
 
-// manual
-
-Controller_t controllerData = {};
-SetServoStates_t servoStateData = {
-    aileron_neutral,  // set_aileron  = 16
-    elevator_neutral, // set_elevator = 20
-    rudder_neutral,   // set_rudder   = 30
-    0,                // set_throttle
-    false,            // flaps
-    false             // release_drone
-};
-
 // Logging Queues
 QueueHandle_t controlOutput_logging_queue = nullptr;
 QueueHandle_t stateVector_logging_queue = nullptr;
@@ -91,6 +79,7 @@ QueueHandle_t pitotTube_logging_queue;
 volatile uint32_t controlOutput_logging_drop_count = 0;
 volatile uint32_t stateVector_logging_drop_count = 0;
 volatile uint32_t manualControl_logging_drop_count = 0;
+SetServoStates_t servoStateData;
 volatile uint32_t imu_logging_drop_count = 0;
 volatile uint32_t barometer_logging_drop_count = 0;
 volatile uint32_t gps_logging_drop_count = 0;
@@ -274,6 +263,13 @@ void setup()
     // pvParameters - Parameters passed into task
     // uxPriority - Priority level (lower is more priority)
     // pxCreatedTask - Pointer to task handle
+    //  xTaskCreate(GPSTask, "GPS", STACK_DEPTH, NULL, *priority + 2, NULL);
+    // xTaskCreate(StateTask, "State", STACK_DEPTH, NULL, *priority, NULL);
+    // xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);
+    //  xTaskCreate(GSARxTask, "GSARx", STACK_DEPTH, NULL, *priority+3, NULL);
+    //  xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority+3, NULL);
+    Serial.println("[BOOT] starting scheduler");
+
     if (!CreateTaskChecked(BlinkTask, "Blink", STACK_DEPTH, kPriorityOne))
     {
         FailStartup("Blink task creation failed");
