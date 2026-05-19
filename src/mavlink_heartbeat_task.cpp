@@ -1,27 +1,15 @@
+/*
+Authors:
+Advik Sharma - github.com/jpyces
+*/
+
 #include "tasks.h"
 #include "hardware.h"
-#include <math.h>
 
+// Design note:
+// Keep heartbeat/task-control logic isolated from simulator and latency code so this
+// 50 Hz loop remains predictable and easy to reason about under load.
 namespace {
-constexpr int32_t kSeattleLatE7 = 476062000;     // 47.6062000 deg
-constexpr int32_t kSeattleLonE7 = -1223321000;   // -122.3321000 deg
-constexpr int32_t kSeattleAltMslMm = 52000;      // 52m AMSL
-constexpr float kPi = 3.14159265359f;
-
-struct SimFlightState {
-    double latDeg = static_cast<double>(kSeattleLatE7) / 1.0e7;
-    double lonDeg = static_cast<double>(kSeattleLonE7) / 1.0e7;
-    float relAltM = 0.0f;
-    float speedMps = 0.0f;
-    float climbMps = 0.0f;
-    float rollDeg = 0.0f;
-    float pitchDeg = 0.0f;
-    float yawDeg = 90.0f;  // Start eastbound
-    float throttleNorm = 0.0f;
-    float vnMps = 0.0f;
-    float veMps = 0.0f;
-};
-
 struct ManualInputSnapshot {
     mavlink_manual_control_t mc = {};
     uint32_t lastInputMs = 0U;
@@ -29,10 +17,17 @@ struct ManualInputSnapshot {
     bool manualInputEnabled = false;
 };
 
+struct ControlOutputSnapshot {
+    uint16_t aileronPwm = 1500U;
+    uint16_t elevatorPwm = 1500U;
+    uint16_t rudderPwm = 1500U;
+    uint16_t throttlePwm = 1000U;
+};
+
 void SendMavlinkMessage(const mavlink_message_t &msg) {
     uint8_t buffer[MAVLINK_MAX_PACKET_LEN] = {};
     const uint16_t len = mavlink_msg_to_send_buffer(buffer, &msg);
-    MAVLINK_SERIAL_900.write(buffer, len);
+    MavlinkSerial900Write(buffer, len);
 }
 
 void SendSysStatus() {
@@ -72,16 +67,6 @@ float Clampf(float value, float minValue, float maxValue) {
     return value;
 }
 
-float WrapHeadingDeg(float headingDeg) {
-    while (headingDeg < 0.0f) {
-        headingDeg += 360.0f;
-    }
-    while (headingDeg >= 360.0f) {
-        headingDeg -= 360.0f;
-    }
-    return headingDeg;
-}
-
 float NormalizeStickAxis(int16_t axis) {
     return Clampf(static_cast<float>(axis) / 1000.0f, -1.0f, 1.0f);
 }
@@ -91,6 +76,36 @@ float NormalizeThrottle(int16_t axis) {
         return Clampf(static_cast<float>(axis) / 1000.0f, 0.0f, 1.0f);
     }
     return Clampf((static_cast<float>(axis) + 1000.0f) / 2000.0f, 0.0f, 1.0f);
+}
+
+int16_t ClampManualAxis(int16_t value) {
+    if (value > 1000) {
+        return 1000;
+    }
+    if (value < -1000) {
+        return -1000;
+    }
+    return value;
+}
+
+int16_t ClampManualThrottle(int16_t value) {
+    if (value > 1000) {
+        return 1000;
+    }
+    if (value < 0) {
+        return 0;
+    }
+    return value;
+}
+
+uint16_t AxisToRcPwm(int16_t axis) {
+    const int16_t clamped = ClampManualAxis(axis);
+    return static_cast<uint16_t>(1500 + (clamped / 2));
+}
+
+uint16_t ThrottleToRcPwm(int16_t throttle) {
+    const int16_t clamped = ClampManualThrottle(throttle);
+    return static_cast<uint16_t>(1000 + clamped);
 }
 
 uint16_t NormalizedToPwm(float value, uint16_t minPwm, uint16_t maxPwm) {
@@ -129,6 +144,17 @@ ManualInputSnapshot ReadManualInputSnapshot() {
     return snapshot;
 }
 
+ControlOutputSnapshot ReadControlOutputSnapshot() {
+    ControlOutputSnapshot snapshot = {};
+    taskENTER_CRITICAL();
+    snapshot.aileronPwm = controlOutput.aileron_pwm;
+    snapshot.elevatorPwm = controlOutput.elevator_pwm;
+    snapshot.rudderPwm = controlOutput.rudder_pwm;
+    snapshot.throttlePwm = controlOutput.throttle_pwm;
+    taskEXIT_CRITICAL();
+    return snapshot;
+}
+
 void UpdateControlOutput(const ManualInputSnapshot &snapshot) {
     const bool inputFresh = (millis() - snapshot.lastInputMs) < 300U;
     const bool linkOk = inputFresh && snapshot.manualInputEnabled;
@@ -139,6 +165,7 @@ void UpdateControlOutput(const ManualInputSnapshot &snapshot) {
     const float throttle =
         (snapshot.armed && linkOk) ? NormalizeThrottle(snapshot.mc.z) : 0.0f;
 
+    // Publish a coherent snapshot for downstream telemetry/logging consumers.
     taskENTER_CRITICAL();
     controlOutput.elevator = elevator;
     controlOutput.aileron = aileron;
@@ -152,116 +179,38 @@ void UpdateControlOutput(const ManualInputSnapshot &snapshot) {
     taskEXIT_CRITICAL();
 }
 
-void UpdateSimFromManualControl(
-    SimFlightState &sim,
-    float dtSec,
-    const ManualInputSnapshot &snapshot
-) {
-    const bool hasFreshInput =
-        ((millis() - snapshot.lastInputMs) < 300U) && snapshot.manualInputEnabled;
-    const bool armed = snapshot.armed;
+void SendRcChannels(const ManualInputSnapshot &snapshot) {
+    const bool inputFresh = ((millis() - snapshot.lastInputMs) < 300U) && snapshot.manualInputEnabled;
+    const uint16_t roll = inputFresh ? AxisToRcPwm(snapshot.mc.y) : 1500U;
+    const uint16_t pitch = inputFresh ? AxisToRcPwm(snapshot.mc.x) : 1500U;
+    const uint16_t throttle = inputFresh ? ThrottleToRcPwm(snapshot.mc.z) : 1000U;
+    const uint16_t yaw = inputFresh ? AxisToRcPwm(snapshot.mc.r) : 1500U;
 
-    const float pitchInput = hasFreshInput ? NormalizeStickAxis(snapshot.mc.x) : 0.0f;
-    const float rollInput = hasFreshInput ? NormalizeStickAxis(snapshot.mc.y) : 0.0f;
-    const float yawInput = hasFreshInput ? NormalizeStickAxis(snapshot.mc.r) : 0.0f;
-    const float throttleInput = (armed && hasFreshInput) ? NormalizeThrottle(snapshot.mc.z) : 0.0f;
-
-    sim.throttleNorm = throttleInput;
-
-    const float rollTargetDeg = rollInput * 45.0f;
-    const float pitchTargetDeg = pitchInput * 20.0f;
-    const float speedTargetMps = armed ? (30.0f * throttleInput) : 0.0f;
-
-    sim.rollDeg += (rollTargetDeg - sim.rollDeg) * Clampf(dtSec * 3.5f, 0.0f, 1.0f);
-    sim.pitchDeg += (pitchTargetDeg - sim.pitchDeg) * Clampf(dtSec * 2.8f, 0.0f, 1.0f);
-    sim.speedMps += (speedTargetMps - sim.speedMps) * Clampf(dtSec * 1.6f, 0.0f, 1.0f);
-
-    const float turnRateDegPerSec = (yawInput * 40.0f) + (sim.rollDeg * 0.45f);
-    sim.yawDeg = WrapHeadingDeg(sim.yawDeg + turnRateDegPerSec * dtSec);
-
-    float climbTargetMps = (sim.pitchDeg * 0.12f) + ((throttleInput - 0.5f) * 2.0f);
-    if (!armed) {
-        climbTargetMps = 0.0f;
-    }
-    sim.climbMps += (climbTargetMps - sim.climbMps) * Clampf(dtSec * 2.0f, 0.0f, 1.0f);
-    sim.climbMps = Clampf(sim.climbMps, -6.0f, 6.0f);
-
-    sim.relAltM = Clampf(sim.relAltM + (sim.climbMps * dtSec), 0.0f, 400.0f);
-
-    const float yawRad = sim.yawDeg * (kPi / 180.0f);
-    const float horizontalSpeedMps = sim.speedMps * cosf(sim.pitchDeg * (kPi / 180.0f));
-    sim.vnMps = horizontalSpeedMps * cosf(yawRad);
-    sim.veMps = horizontalSpeedMps * sinf(yawRad);
-
-    const double metersPerDegLat = 111111.0;
-    const double cosLat = cos(sim.latDeg * (kPi / 180.0f));
-    const double metersPerDegLon = metersPerDegLat * ((fabs(cosLat) < 0.01) ? 0.01 : cosLat);
-
-    sim.latDeg += static_cast<double>(sim.vnMps * dtSec) / metersPerDegLat;
-    sim.lonDeg += static_cast<double>(sim.veMps * dtSec) / metersPerDegLon;
-}
-
-void SendGpsRawInt(const SimFlightState &sim) {
     mavlink_message_t msg = {};
-    mavlink_gps_raw_int_t gps = {};
-    gps.time_usec = static_cast<uint64_t>(millis()) * 1000ULL;
-    gps.fix_type = 3U;              // 3D fix
-    gps.lat = static_cast<int32_t>(sim.latDeg * 1.0e7);
-    gps.lon = static_cast<int32_t>(sim.lonDeg * 1.0e7);
-    gps.alt = kSeattleAltMslMm + static_cast<int32_t>(sim.relAltM * 1000.0f);
-    gps.eph = 80U;                  // 0.8m HDOP-equivalent
-    gps.epv = 120U;                 // 1.2m VDOP-equivalent
-    gps.vel = static_cast<uint16_t>(Clampf(sim.speedMps * 100.0f, 0.0f, 65535.0f));
-    gps.cog = static_cast<uint16_t>(WrapHeadingDeg(sim.yawDeg) * 100.0f);
-    gps.satellites_visible = 12U;
+    mavlink_rc_channels_t rc = {};
+    rc.time_boot_ms = millis();
+    rc.chancount = 4U;
+    rc.chan1_raw = roll;
+    rc.chan2_raw = pitch;
+    rc.chan3_raw = throttle;
+    rc.chan4_raw = yaw;
+    rc.rssi = inputFresh ? 100U : 0U;
 
-    mavlink_msg_gps_raw_int_encode(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &msg, &gps);
+    mavlink_msg_rc_channels_encode(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &msg, &rc);
     SendMavlinkMessage(msg);
 }
 
-void SendGlobalPositionInt(const SimFlightState &sim) {
+void SendServoOutputRaw(const ControlOutputSnapshot &snapshot) {
     mavlink_message_t msg = {};
-    mavlink_global_position_int_t pos = {};
-    pos.time_boot_ms = millis();
-    pos.lat = static_cast<int32_t>(sim.latDeg * 1.0e7);
-    pos.lon = static_cast<int32_t>(sim.lonDeg * 1.0e7);
-    pos.alt = kSeattleAltMslMm + static_cast<int32_t>(sim.relAltM * 1000.0f);
-    pos.relative_alt = static_cast<int32_t>(sim.relAltM * 1000.0f);
-    pos.vx = static_cast<int16_t>(sim.vnMps * 100.0f);
-    pos.vy = static_cast<int16_t>(sim.veMps * 100.0f);
-    pos.vz = static_cast<int16_t>(-sim.climbMps * 100.0f);  // Positive down in MAVLink
-    pos.hdg = static_cast<uint16_t>(WrapHeadingDeg(sim.yawDeg) * 100.0f);
+    mavlink_servo_output_raw_t servo = {};
+    servo.time_usec = micros();
+    servo.port = 0U;
+    servo.servo1_raw = snapshot.aileronPwm;
+    servo.servo2_raw = snapshot.elevatorPwm;
+    servo.servo3_raw = snapshot.throttlePwm;
+    servo.servo4_raw = snapshot.rudderPwm;
 
-    mavlink_msg_global_position_int_encode(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &msg, &pos);
-    SendMavlinkMessage(msg);
-}
-
-void SendAttitude(const SimFlightState &sim) {
-    mavlink_message_t msg = {};
-    mavlink_attitude_t attitude = {};
-    attitude.time_boot_ms = millis();
-    attitude.roll = sim.rollDeg * (kPi / 180.0f);
-    attitude.pitch = sim.pitchDeg * (kPi / 180.0f);
-    attitude.yaw = sim.yawDeg * (kPi / 180.0f);
-    attitude.rollspeed = 0.0f;
-    attitude.pitchspeed = 0.0f;
-    attitude.yawspeed = 0.0f;
-
-    mavlink_msg_attitude_encode(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &msg, &attitude);
-    SendMavlinkMessage(msg);
-}
-
-void SendVfrHud(const SimFlightState &sim) {
-    mavlink_message_t msg = {};
-    mavlink_vfr_hud_t hud = {};
-    hud.airspeed = sim.speedMps;
-    hud.groundspeed = sqrtf((sim.vnMps * sim.vnMps) + (sim.veMps * sim.veMps));
-    hud.heading = static_cast<int16_t>(WrapHeadingDeg(sim.yawDeg));
-    hud.throttle = static_cast<uint16_t>(sim.throttleNorm * 100.0f);
-    hud.alt = sim.relAltM + (static_cast<float>(kSeattleAltMslMm) / 1000.0f);
-    hud.climb = sim.climbMps;
-
-    mavlink_msg_vfr_hud_encode(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &msg, &hud);
+    mavlink_msg_servo_output_raw_encode(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &msg, &servo);
     SendMavlinkMessage(msg);
 }
 }  // namespace
@@ -272,17 +221,15 @@ void MavlinkHeartbeatTask(void *pvParameters) {
     const TickType_t period = pdMS_TO_TICKS(20);  // 50 Hz control loop
     TickType_t lastWake = xTaskGetTickCount();
     uint32_t loopCounter = 0U;
-    uint32_t lastUpdateMs = millis();
-    SimFlightState sim = {};
     for (;;) {
-        const uint32_t nowMs = millis();
-        float dtSec = static_cast<float>(nowMs - lastUpdateMs) / 1000.0f;
-        lastUpdateMs = nowMs;
-        dtSec = Clampf(dtSec, 0.01f, 0.05f);
-
         const ManualInputSnapshot inputSnapshot = ReadManualInputSnapshot();
         UpdateControlOutput(inputSnapshot);
-        UpdateSimFromManualControl(sim, dtSec, inputSnapshot);
+        const ControlOutputSnapshot controlSnapshot = ReadControlOutputSnapshot();
+
+        if ((loopCounter % 5U) == 0U) {
+            SendRcChannels(inputSnapshot);
+            SendServoOutputRaw(controlSnapshot);
+        }
 
         if ((loopCounter % 50U) == 0U) {
             mavlink_message_t heartbeatMsg = {};
@@ -303,13 +250,6 @@ void MavlinkHeartbeatTask(void *pvParameters) {
             );
             SendMavlinkMessage(heartbeatMsg);
             SendSysStatus();
-        }
-
-        if ((loopCounter % 5U) == 0U) {
-            SendGpsRawInt(sim);
-            SendGlobalPositionInt(sim);
-            SendAttitude(sim);
-            SendVfrHud(sim);
         }
 
         ++loopCounter;

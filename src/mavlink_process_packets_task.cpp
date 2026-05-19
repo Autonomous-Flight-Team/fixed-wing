@@ -3,20 +3,12 @@ Advik Sharma - github.com/jpyces
 */
 
 #include "tasks.h"
-#include "hardware.h"
 
 #include <arduino_freertos.h>
 #include <Arduino.h>
 #include <queue.h>
 
-// Stolen from mavlink_rx_tasks.cpp - perhaps refactor to not repeat
-// RX loops are paced to avoid starving other tasks; dispatch is slightly faster.
-
 namespace {
-uint32_t g_lastManualPrintMs = 0U;
-constexpr uint8_t kControlPrintArmedOnly = 1U;
-constexpr uint8_t kControlPrintAlways = 2U;
-
 void LockMavlinkData() {
     if (mavlinkDataMutex != nullptr) {
         xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);
@@ -60,128 +52,160 @@ int16_t PwmToThrottle(uint16_t pwm) {
 
 void UpdateManualInputMetadataLocked() {
     mavlinkLastManualInputMs = millis();
+    mavlinkLastManualInputUs = micros();
     ++mavlinkManualInputFrameCount;
 }
 
-void PrintManualInputsIfDue(const char *sourceTag) {
-    const uint32_t nowMs = millis();
-    if ((nowMs - g_lastManualPrintMs) < 200U) {
-        return;
-    }
+void ProcessPacket(const MavlinkRxPacket_t &pkt) {
+    switch (pkt.msg.msgid) {
+        case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT: {
+            LockMavlinkData();
+            mavlink_msg_set_position_target_global_int_decode(&pkt.msg, &set_global_position);
+            UnlockMavlinkData();
+            break;
+        }
 
-    mavlink_manual_control_t mcSnapshot = {};
-    bool armed = false;
-    uint8_t printMode = kControlPrintArmedOnly;
-    LockMavlinkData();
-    
-    mcSnapshot = manual_control_data;
-    armed = mavlinkVehicleArmed;
-    printMode = mavlinkControlPrintMode;
-    UnlockMavlinkData();
+        case MAVLINK_MSG_ID_MANUAL_CONTROL: {
+            LockMavlinkData();
+            mavlink_msg_manual_control_decode(&pkt.msg, &manual_control_data);
+            ConstructLogAndFillQueue(manual_control_data);
+            Serial.print("[MAVLINK][MANUAL_CONTROL] ");
+            Serial.print("target=");
+            Serial.print(manual_control_data.target);
+            Serial.print(" x=");
+            Serial.print(manual_control_data.x);
+            Serial.print(" y=");
+            Serial.print(manual_control_data.y);
+            Serial.print(" z=");
+            Serial.print(manual_control_data.z);
+            Serial.print(" r=");
+            Serial.print(manual_control_data.r);
+            Serial.print(" s=");
+            Serial.print(manual_control_data.s);
+            Serial.print(" t=");
+            Serial.print(manual_control_data.t);
+            Serial.print(" aux1=");
+            Serial.print(manual_control_data.aux1);
+            Serial.print(" aux2=");
+            Serial.print(manual_control_data.aux2);
+            Serial.print(" aux3=");
+            Serial.print(manual_control_data.aux3);
+            Serial.print(" aux4=");
+            Serial.print(manual_control_data.aux4);
+            Serial.print(" aux5=");
+            Serial.print(manual_control_data.aux5);
+            Serial.print(" aux6=");
+            Serial.print(manual_control_data.aux6);
+            Serial.print(" buttons=0x");
+            Serial.print(manual_control_data.buttons);
+            Serial.print(" buttons2=0x");
+            Serial.print(manual_control_data.buttons2);
+            Serial.print(" ext=0x");
+            Serial.println(manual_control_data.enabled_extensions);
 
-    if (printMode == kControlPrintArmedOnly && !armed) {
-        return;
-    }
-    if (printMode != kControlPrintArmedOnly && printMode != kControlPrintAlways) {
-        return;
-    }
+            UpdateManualInputMetadataLocked();
+            UnlockMavlinkData();
+            break;
+        }
 
-    g_lastManualPrintMs = nowMs;
-    Serial.print("[MAVLINK][CTRL][");
-    Serial.print(sourceTag);
-    Serial.print("] x=");
-    Serial.print(mcSnapshot.x);
-    Serial.print(" y=");
-    Serial.print(mcSnapshot.y);
-    Serial.print(" z=");
-    Serial.print(mcSnapshot.z);
-    Serial.print(" r=");
-    Serial.print(mcSnapshot.r);
-    Serial.print(" buttons=");
-    Serial.println(static_cast<unsigned long>(mcSnapshot.buttons));
-}
+        case MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE: {
+            mavlink_rc_channels_override_t rc = {};
+            mavlink_msg_rc_channels_override_decode(&pkt.msg, &rc);
+            mavlink_manual_control_t mc = {};
+            mc.x = PwmToAxis(rc.chan2_raw);      // pitch
+            mc.y = PwmToAxis(rc.chan1_raw);      // roll
+            mc.r = PwmToAxis(rc.chan4_raw);      // yaw
+            mc.z = PwmToThrottle(rc.chan3_raw);  // throttle [0..1000]
+            Serial.println("Updates from RC Channel Override");
+            Serial.print("Channel 5: ");
+            Serial.println(rc.chan5_raw);
+            Serial.print("Channel 6: ");
+            Serial.println(rc.chan6_raw);
+            mc.aux1 = rc.chan5_raw;
+            mc.aux2 = rc.chan6_raw;
+            mc.buttons = 0U;
+            LockMavlinkData();
+            manual_control_data = mc;
+            UpdateManualInputMetadataLocked();
+            UnlockMavlinkData();
+            break;
+        }
+
+        case MAVLINK_MSG_ID_COMMAND_LONG: {
+            LockMavlinkData();
+            Serial.println("HI");
+            mavlink_msg_command_long_decode(&pkt.msg, &specific_cmds);
+
+            if (specific_cmds.command == MAV_CMD_DO_SET_SERVO)
+            {
+                float pwm = specific_cmds.param2;
+                Serial.print("[FLAPS] PWM value: ");
+                Serial.println(pwm);
+
+                if (pwm < 1000.0f)
+                {
+                    mavlinkFlapsPosition = FLAPS_UP;
+                }
+                else if (pwm < 2000.0f)
+                {
+                    mavlinkFlapsPosition = FLAPS_MID;
+                }
+                else
+                {
+                    mavlinkFlapsPosition = FLAPS_DOWN;
+                }
+            }
+
+            UnlockMavlinkData();
+            break;
+        }
+
+        case MAVLINK_MSG_ID_SET_MODE: {
+            LockMavlinkData();
+            mavlink_msg_set_mode_decode(&pkt.msg, &mode);
+            UnlockMavlinkData();
+            break;
+        }
+
+        
+            
+        }
+    }
 }  // namespace
 
 void RxMavlinkProcess900PacketTask(void *pvParameters) {
-    //TickType_t lastWake = xTaskGetTickCount();
-    //const TickType_t freq = pdMS_TO_TICKS(SLOW_MS_PER_TICK);
+    (void)pvParameters;
 
     MavlinkRxPacket_t pkt = {};
     for (;;) {
-        bool handledPacket = false;
-        for (uint8_t queueIndex = 0U; queueIndex < 2U; ++queueIndex) {
-            QueueHandle_t queueHandle = (queueIndex == 0U) ? mavlinkRxQueue900 : mavlinkRxQueue24;
-            if (queueHandle == nullptr) {
-                continue;
-            }
-
-            if (xQueueReceive(queueHandle, &pkt, 0) != pdTRUE) {
-                continue;
-            }
-
-            handledPacket = true;
-            HandleQgcHandshakePacket(pkt);
-            switch (pkt.msg.msgid) {
-                // Parsing and storing pkt message based on their msgID into globally accessible variables
-                case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT: {
-                    LockMavlinkData();
-                    mavlink_msg_set_position_target_global_int_decode(&pkt.msg, &set_global_position);
-                    UnlockMavlinkData();
-                    break;
-                }
-
-                // This case may be irrelevant - ATTTIUDE calculated locally by flight controller
-                case MAVLINK_MSG_ID_SET_ATTITUDE_TARGET: {
-                    break;
-                }
-
-                case MAVLINK_MSG_ID_MANUAL_CONTROL: {
-                    LockMavlinkData();
-                    mavlink_msg_manual_control_decode(&pkt.msg, &manual_control_data);
-                    UpdateManualInputMetadataLocked();
-                    UnlockMavlinkData();
-                    PrintManualInputsIfDue("MAN");
-                    break;
-                }
-
-                case MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE: {
-                    mavlink_rc_channels_override_t rc = {};
-                    mavlink_msg_rc_channels_override_decode(&pkt.msg, &rc);
-                    mavlink_manual_control_t mc = {};
-                    mc.x = PwmToAxis(rc.chan2_raw);      // pitch
-                    mc.y = PwmToAxis(rc.chan1_raw);      // roll
-                    mc.r = PwmToAxis(rc.chan4_raw);      // yaw
-                    mc.z = PwmToThrottle(rc.chan3_raw);  // throttle [0..1000]
-                    mc.buttons = 0U;
-                    LockMavlinkData();
-                    manual_control_data = mc;
-                    UpdateManualInputMetadataLocked();
-                    UnlockMavlinkData();
-                    PrintManualInputsIfDue("RCOVR");
-                    break;
-                }
-
-                case MAVLINK_MSG_ID_COMMAND_LONG: {
-                    LockMavlinkData();
-                    mavlink_msg_command_long_decode(&pkt.msg, &specific_cmds);
-                    UnlockMavlinkData();
-                    break;
-                }
-
-                case MAVLINK_MSG_ID_SET_MODE: {
-                    LockMavlinkData();
-                    mavlink_msg_set_mode_decode(&pkt.msg, &mode);
-                    UnlockMavlinkData();
-                    break;
-                }
-
-                default:
-                    break;
-            }
-        }
-
-        if (!handledPacket) {
+        if (mavlinkRxQueue900 == nullptr) {
             vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
+            continue;
         }
+        
+        if (xQueueReceive(mavlinkRxQueue900, &pkt, 0) == pdTRUE) {
+            if (mavlinkQgcHandshakeQueue != nullptr) {
+                (void)xQueueSend(mavlinkQgcHandshakeQueue, &pkt, 0);
+            }
+            ProcessPacket(pkt);
+        }
+        vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
+    }
+}
+
+void RxMavlinkProcess24PacketTask(void *pvParameters){
+    (void) pvParameters;
+
+    MavlinkRxPacket_t pkt = {};
+    for (;;) {
+        if (mavlinkRxQueue24 == nullptr){
+            vTaskDelay(RX_FAST_MS_PER_TICK);
+            continue;
+        }
+
+        if (xQueueReceive(mavlinkRxQueue24, &pkt, 0) == pdTRUE){
+            xQueueSend(mavlinkRx24_QuadcopterOrigin_ForwardQueue, &pkt, 0);
+        }
+        vTaskDelay(pdMS_TO_TICKS(RX_FAST_MS_PER_TICK));
     }
 }

@@ -7,7 +7,7 @@
 
 void servos_to_neutral();
 
-bool intialize_servo_control()
+bool initialize_servo_control()
 {
   // Set all digital pins to OUTPUT
   pinMode(left_aileron_pin, OUTPUT);

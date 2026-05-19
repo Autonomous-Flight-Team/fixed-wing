@@ -39,8 +39,16 @@ bool GPSInit()
     return true;
 }
 
+bool SDInit() {
+    if (!SD.begin(BUILTIN_SDCARD)) {
+        Serial.println("SD Card failed :(");
+        return false;
+    }
+    Serial.println("SD Card working!");
+    return true;
+}
+
 // Initializes all Hardware
-bool HardwareInit()
-{
-    return ImuInit() && BaroInit(); //&& GPSInit();
+bool HardwareInit() {
+    return ImuInit() && BaroInit() && GPSInit() && SDInit();
 }

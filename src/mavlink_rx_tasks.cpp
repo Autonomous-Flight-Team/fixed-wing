@@ -9,31 +9,12 @@ Advik Sharma - github.com/jpyces
 #include <queue.h>
 
 // Shared RX queues and telemetry state, defined here and exposed via tasks.h.
-// QueueHandle_t mavlinkRxQueue900 = nullptr;
-// QueueHandle_t mavlinkRxQueue24  = nullptr;
 volatile uint32_t mavlinkRxDrop900 = 0;
-volatile uint32_t mavlinkRxDrop24 = 0;
+volatile uint32_t mavlinkRxDrop24  = 0;
+volatile uint32_t mavlinkRxParsed24Count = 0;
 volatile mavlink_message_t mavlinkLastTelemetry = {};
 volatile uint32_t mavlinkTelemetryCount = 0;
 
-namespace
-{
-    void LockMavlinkData()
-    {
-        if (mavlinkDataMutex != nullptr)
-        {
-            xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);
-        }
-    }
-
-    void UnlockMavlinkData()
-    {
-        if (mavlinkDataMutex != nullptr)
-        {
-            xSemaphoreGive(mavlinkDataMutex);
-        }
-    }
-} // namespace
 
 // Purpose: Parse MAVLink from the 900 MHz UART and enqueue full messages.
 // Structure: Tight read/parse loop + periodic delay to bound CPU usage.
@@ -51,8 +32,8 @@ void MavlinkRx900Task(void *pvParameters)
         while (MAVLINK_SERIAL_900.available() > 0)
         {
             uint8_t c = static_cast<uint8_t>(MAVLINK_SERIAL_900.read());
-            // Serial.println("RAWWWW");
-            // Serial.println(MAVLINK_SERIAL_900.read());
+            //Serial.print("RAWWWW 900: ");
+            //Serial.println(c); 
             if (mavlink_parse_char(MAVLINK_COMM_900, c, &msg, &status))
             {
                 MavlinkRxPacket_t pkt;
@@ -84,23 +65,30 @@ void MavlinkRx24Task(void *pvParameters)
 
     for (;;)
     {
+        // uint32_t time = micros();
+        // Serial.println("Rx24 Task Start");
         while (MAVLINK_SERIAL_24.available() > 0)
         {
             uint8_t c = static_cast<uint8_t>(MAVLINK_SERIAL_24.read());
+            //Serial.print("RAWWWW 2.4: ");
+            //Serial.println(c);
             if (mavlink_parse_char(MAVLINK_COMM_24, c, &msg, &status))
             {
                 MavlinkRxPacket_t pkt;
                 pkt.link = LINK_24GHZ;
                 pkt.msg = msg;
+                // Serial.println("900 Mhz received!");
+                xSemaphoreTake(mavlinkDataMutex, portMAX_DELAY);
                 if (xQueueSend(mavlinkRxQueue24, &pkt, 0) != pdTRUE)
                 {
-                    LockMavlinkData();
                     ++mavlinkRxDrop24;
-                    UnlockMavlinkData();
                 }
+                xSemaphoreGive(mavlinkDataMutex);
             }
-            vTaskDelayUntil(&lastWake, freq);
         }
+        // Serial.println("Outside while loop");
+        // Serial.println(micros()-time);
+        vTaskDelayUntil(&lastWake, freq);
     }
 }
 

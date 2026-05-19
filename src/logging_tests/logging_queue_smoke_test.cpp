@@ -8,8 +8,7 @@ void LoggingQueueSmokeTestTask(void *pvParameters) {
     (void)pvParameters;
     vTaskDelay(pdMS_TO_TICKS(1000));
 
-    if (sensorData_logging_queue == nullptr ||
-        controlOutput_logging_queue == nullptr ||
+    if (controlOutput_logging_queue == nullptr ||
         stateVector_logging_queue == nullptr ||
         manualControl_t_logging_queue == nullptr) {
         Serial.println("[LOG-TEST] ERROR: one or more logging queues are null");
@@ -21,10 +20,6 @@ void LoggingQueueSmokeTestTask(void *pvParameters) {
     //Serial.println("[LOG-TEST] Continuous queue fill started");
 
     for (;;) {
-        Log<SensorData_t> sensorLog = {};
-        sensorLog.data.ax = static_cast<float>(i);
-        sensorLog.timestamp = xTaskGetTickCount();
-
         Log<ControlOutput_t> controlLog = {};
         controlLog.data.aileron = static_cast<float>((i % 200) / 100.0f - 1.0f);
         controlLog.data.elevator = static_cast<float>(((i + 25U) % 200) / 100.0f - 1.0f);
@@ -45,7 +40,6 @@ void LoggingQueueSmokeTestTask(void *pvParameters) {
         manualLog.data.x = static_cast<int16_t>(i & 0x7FFF);
         manualLog.timestamp = xTaskGetTickCount();
 
-        FillLoggingQueues(sensorLog);
         FillLoggingQueues(controlLog);
         FillLoggingQueues(stateLog);
         FillLoggingQueues(manualLog);
@@ -55,11 +49,6 @@ void LoggingQueueSmokeTestTask(void *pvParameters) {
         if ((now - lastReport) >= pdMS_TO_TICKS(1000)) {
             lastReport = now;
             //Serial.println("[LOG-TEST] Queue stats:");
-
-            //Serial.print("  sensor q=");
-            //Serial.print(uxQueueMessagesWaiting(sensorData_logging_queue));
-            //Serial.print(" dropped=");
-            //Serial.println(sensorData_logging_drop_count);
 
             //Serial.print("  control q=");
             //Serial.print(uxQueueMessagesWaiting(controlOutput_logging_queue));
