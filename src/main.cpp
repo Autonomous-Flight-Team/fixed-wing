@@ -212,6 +212,11 @@ static bool InitTx()
         {
             return false;
         }
+    } else {
+        if (!CreateTaskChecked(MavlinkTelemetryTask, "MavTel", RX_PROCESS_STACK_DEPTH, kPriorityOne))
+        {
+            return false;
+        }
     }
     return true;
 }

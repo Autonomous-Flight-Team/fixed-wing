@@ -19,9 +19,9 @@ void ReadIMU(IMUData_t *data)
     data->ay = a.acceleration.y;
     data->az = a.acceleration.z;
 
-    data->gx = g.acceleration.x;
-    data->gy = g.acceleration.y;
-    data->gz = g.acceleration.z;
+    data->gx = g.gyro.x;
+    data->gy = g.gyro.y;
+    data->gz = g.gyro.z;
 }
 
 // Reads data from the barometer
