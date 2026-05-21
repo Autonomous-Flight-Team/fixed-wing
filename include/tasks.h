@@ -11,9 +11,12 @@
 #include <task.h>
 
 // Makes the variables declared in the respective files global
-extern SensorData_t sensorData;
+// Per-sensor globals (replaces legacy `sensorData` composite)
 extern IMUData_t imuData;
 extern BaroData_t baroData;
+extern GPSData_t gpsData;
+extern PitotData_t pitotData;
+// Legacy composite `SensorData_t` removed; use the per-sensor globals above.
 extern ControlOutput_t controlOutput;
 extern StateVector_t stateVector;
 extern SemaphoreHandle_t dataMutex;
@@ -87,6 +90,7 @@ extern SemaphoreHandle_t stateMutex;
 // Task Declarations
 // General
 void ImuBaroTask(void *pvParameters);
+void PitotTask(void *pvParameters);
 void GPSTask(void *pvParameters);
 void StateTask(void *pvParameters);
 void PIDTask(void *pvParameters);

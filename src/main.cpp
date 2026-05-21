@@ -32,9 +32,10 @@ static constexpr bool kEnableSimulatedLocationSensorTask = true;
 static constexpr bool kEnableSerial3LoopbackSelfTestTask = false;
 static constexpr bool kEnablePlaceholderLogProducerTask = true;
 
-SensorData_t sensorData = {0};
 IMUData_t imuData = {0};
 BaroData_t baroData = {0};
+GPSData_t gpsData = {0};
+PitotData_t pitotData = {0};
 ControlOutput_t controlOutput = {0};
 StateVector_t stateVector = {0};
 BlinkState_t blinkState = {false};
@@ -278,10 +279,22 @@ void setup()
     {
         FailStartup("InitLogging failed");
     }
-    xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, kPriorityTwo, NULL);
-    if (!CreateTaskChecked(GPSTask, "GPS", STACK_DEPTH, kPriorityThree))
-    {
-        FailStartup("GPS task creation failed");
+    
+    if (!kEnablePlaceholderLogProducerTask) {
+        // Temporary, for testing
+        xTaskCreate(ImuBaroTask, "ImuBaro", STACK_DEPTH, NULL, kPriorityTwo, NULL);
+        // if (!CreateTaskChecked(ImuBaroTask, "ImuBaro", STACK_DEPTH, kPriorityTwo)) 
+        // {
+        //     FailStartup("IMU Baro task creation failed");
+        // }
+        if (!CreateTaskChecked(GPSTask, "GPS", STACK_DEPTH, kPriorityThree))
+        {
+            FailStartup("GPS task creation failed");
+        }
+        if (!CreateTaskChecked(PitotTask, "Pitot", STACK_DEPTH, kPriorityThree))
+        {
+            FailStartup("Pitot task creation failed");
+        }
     }
     if (kEnablePlaceholderLogProducerTask &&
         !CreateTaskChecked(PlaceholderLogProducerTask, "LogPlaceholder", STACK_DEPTH, kPriorityOne))

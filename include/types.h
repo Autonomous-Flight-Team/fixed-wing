@@ -83,31 +83,28 @@ typedef struct
     float vs;
 } GPSData_t;
 
-typedef struct {} PitotData_t;
+typedef struct {
+    // Differential pressure measured by pitot tube (Pa)
+    float diff_pressure_pa;
+    // Indicated airspeed (m/s) computed from differential pressure and local air density
+    float ias_mps;
+    // True airspeed (m/s) - optional, computed if barometer/temperature available
+    float tas_mps;
+    // Ambient temperature in Celsius (if provided by sensor or estimated)
+    float temp_c;
+    // Measurement validity flag
+    bool valid;
+} PitotData_t;
 
 
+// Compound sensors container: groups per-sensor structs for packetization
 typedef struct
 {
-    // IMU
-    // Linear Acceleration
-    float ax, ay, az;
-    // Rotational Velocity
-    float gx, gy, gz;
-    // Barometer
-    float altitude;
-    float pressure;
-    float temp;
-    // GPS
-    // Latitude
-    double lat;
-    // Longitude
-    double lon;
-    float gps_altitude;
-    // Linear Velocity
-    float vs;
-
-    // Sensor Data Size:
-} SensorData_t;
+    IMUData_t imu;
+    BaroData_t baro;
+    GPSData_t gps;
+    PitotData_t pitot;
+} Sensors_t;
 
 typedef struct
 {
@@ -124,7 +121,7 @@ typedef struct
 typedef struct
 {
     StateVector_t state;
-    SensorData_t sensor;
+    Sensors_t sensor;
 } GSATxPacket_t;
 
 typedef struct

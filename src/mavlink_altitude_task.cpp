@@ -17,11 +17,11 @@ float ReadAltitudeMeters() {
     float altitudeM = 0.0f;
     if (dataMutex != nullptr) {
         if (xSemaphoreTake(dataMutex, portMAX_DELAY) == pdTRUE) {
-            altitudeM = sensorData.altitude;
+            altitudeM = baroData.altitude;
             xSemaphoreGive(dataMutex);
         }
     } else {
-        altitudeM = sensorData.altitude;
+        altitudeM = baroData.altitude;
     }
     return altitudeM;
 }
