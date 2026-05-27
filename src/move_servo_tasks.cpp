@@ -19,18 +19,19 @@ int map_throttle(int cont_throttle)
     return cont_throttle / 10;
 }
 
-namespace
-{
-float NormalizeManualAxis(int16_t axis)
-{
-    return clamp(static_cast<float>(axis) / 1000.0f, -1.0f, 1.0f);
-}
+// MIGHT NEED FOR SIM TO WORK
+// namespace
+// {
+// float NormalizeManualAxis(int16_t axis)
+// {
+//     return clamp(static_cast<float>(axis) / 1000.0f, -1.0f, 1.0f);
+// }
 
-float NormalizeManualThrottle(int16_t throttle)
-{
-    return clamp(static_cast<float>(throttle) / 1000.0f, 0.0f, 1.0f);
-}
-} // namespace
+// float NormalizeManualThrottle(int16_t throttle)
+// {
+//     return clamp(static_cast<float>(throttle) / 1000.0f, 0.0f, 1.0f);
+// }
+// } // namespace
 
 void servos_to_neutral()
 {
@@ -117,10 +118,11 @@ void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servo
     {
         servoStates->set_flaps = flaps_mid;
     }
-    const float throttleInput = NormalizeManualThrottle(controllerData->z);
-    const float elevatorInput = NormalizeManualAxis(controllerData->x);
-    const float aileronInput = NormalizeManualAxis(controllerData->y);
-    const float rudderInput = NormalizeManualAxis(controllerData->r);
+    // i thought i needed this for simulation
+    // const float throttleInput = NormalizeManualThrottle(controllerData->z);
+    // const float elevatorInput = NormalizeManualAxis(controllerData->x);
+    // const float aileronInput = NormalizeManualAxis(controllerData->y);
+    // const float rudderInput = NormalizeManualAxis(controllerData->r);
     /*
     if (mavlinkVehicleArmed == true)
     {

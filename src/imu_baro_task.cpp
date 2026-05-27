@@ -22,6 +22,7 @@ void ReadIMU(SensorData_t *data)
     data->gx = g.acceleration.x;
     data->gy = g.acceleration.y;
     data->gz = g.acceleration.z;
+
 }
 
 // Reads data from the barometer
@@ -46,11 +47,31 @@ void ImuBaroTask(void *pvParameters)
 {
     TickType_t lastWake = xTaskGetTickCount();
     const TickType_t freq = pdMS_TO_TICKS(MS_PER_TICK);
-    
-    for (;;) {
-        if (xSemaphoreTake(dataMutex, portMAX_DELAY)) {
-            ReadIMU(&imuData);
-            ReadBaro(&baroData);
+
+    for (;;)
+    {
+        SensorData_t newData = ReadImuBaro();
+        IMUData_t imuLogData = {};
+        imuLogData.ax = newData.ax;
+        imuLogData.ay = newData.ay;
+        imuLogData.az = newData.az;
+        imuLogData.gx = newData.gx;
+        imuLogData.gy = newData.gy;
+        imuLogData.gz = newData.gz;
+
+        BaroData_t baroLogData = {};
+        baroLogData.altitude = newData.altitude;
+        baroLogData.pressure = newData.pressure;
+        baroLogData.temp = newData.temp;
+
+        ConstructLogAndFillQueue(imuLogData);
+        ConstructLogAndFillQueue(baroLogData);
+
+        if (xSemaphoreTake(dataMutex, portMAX_DELAY))
+        {
+            sensorData = newData;
+            imuData = imuLogData;
+            baroData = baroLogData;
             xSemaphoreGive(dataMutex);
         }
         vTaskDelayUntil(&lastWake, freq);
