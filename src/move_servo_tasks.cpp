@@ -19,18 +19,24 @@ int map_throttle(int cont_throttle)
     return cont_throttle / 10;
 }
 
-namespace
+float map_servos(int joy_stick_loc, int base)
 {
-float NormalizeManualAxis(int16_t axis)
-{
-    return clamp(static_cast<float>(axis) / 1000.0f, -1.0f, 1.0f);
+    return (joy_stick_loc / 1000.0) * base + base;
 }
 
-float NormalizeManualThrottle(int16_t throttle)
-{
-    return clamp(static_cast<float>(throttle) / 1000.0f, 0.0f, 1.0f);
-}
-} // namespace
+// MIGHT NEED FOR SIM TO WORK
+// namespace
+// {
+// float NormalizeManualAxis(int16_t axis)
+// {
+//     return clamp(static_cast<float>(axis) / 1000.0f, -1.0f, 1.0f);
+// }
+
+// float NormalizeManualThrottle(int16_t throttle)
+// {
+//     return clamp(static_cast<float>(throttle) / 1000.0f, 0.0f, 1.0f);
+// }
+// } // namespace
 
 void servos_to_neutral()
 {
@@ -64,9 +70,9 @@ void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servo
 
     servoStates->set_throttle = map_throttle(controllerData->z) + 1000; // passes 0 -1000 -> needs to be maped to 0 to 100
 
-    servoStates->set_elevator = clamp(servoStates->set_elevator + controllerData->x * elevator_rate, (float)0, elevator_limit);
-    servoStates->set_aileron = clamp(servoStates->set_aileron + controllerData->y * aileron_rate, (float)0, aileron_limit);
-    servoStates->set_rudder = clamp(servoStates->set_rudder + controllerData->r * rudder_rate, (float)0, rudder_limit);
+    servoStates->set_elevator = clamp(map_servos(controllerData->x, elevator_neutral), (float)0, elevator_limit);
+    servoStates->set_aileron = clamp(map_servos(controllerData->y, aileron_neutral), (float)0, aileron_limit);
+    servoStates->set_rudder = clamp(map_servos(controllerData->r, rudder_neutral), (float)0, rudder_limit);
 
     bool buttonState[16];
     for (int i = 0; i < 16; i++)
@@ -117,10 +123,11 @@ void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servo
     {
         servoStates->set_flaps = flaps_mid;
     }
-    const float throttleInput = NormalizeManualThrottle(controllerData->z);
-    const float elevatorInput = NormalizeManualAxis(controllerData->x);
-    const float aileronInput = NormalizeManualAxis(controllerData->y);
-    const float rudderInput = NormalizeManualAxis(controllerData->r);
+    // i thought i needed this for simulation
+    // const float throttleInput = NormalizeManualThrottle(controllerData->z);
+    // const float elevatorInput = NormalizeManualAxis(controllerData->x);
+    // const float aileronInput = NormalizeManualAxis(controllerData->y);
+    // const float rudderInput = NormalizeManualAxis(controllerData->r);
     /*
     if (mavlinkVehicleArmed == true)
     {
@@ -137,8 +144,7 @@ void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servo
         clamp(servoStates->set_aileron + (aileronInput * aileron_rate), 0.0f, aileron_limit);
     servoStates->set_rudder =
         clamp(servoStates->set_rudder + (rudderInput * rudder_rate), 0.0f, rudder_limit);*/
-  
-  
+
     // Serial.print("Elevator: ");
     // Serial.println(servoStates->set_elevator);
     // Serial.print(" Rudder:");
