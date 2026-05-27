@@ -8,9 +8,9 @@ const int MS_PER_TICK = 20; // 50 Hz
 
 double KMPH_MPS_CONVERT_RATE = 3.6;
 
-// Reads GPS data and outputs it into a SensorData_t struct
-SensorData_t ReadGPS() {
-    SensorData_t data = {0};
+// Reads GPS data and outputs it into a GPSData_t struct
+GPSData_t ReadGPS() {
+    GPSData_t data = {0};
     while (gpsSerial.available() > 0) {
         gps.encode(gpsSerial.read());
     }
@@ -32,22 +32,24 @@ SensorData_t ReadGPS() {
 void GPSTask(void *pvParameters) {
     TickType_t lastWake = xTaskGetTickCount();
     const TickType_t freq = pdMS_TO_TICKS(MS_PER_TICK);
-
+    
     for (;;) {
-        SensorData_t gpsData = ReadGPS();
-        GPSData_t gpsLogData = {};
-        if (xSemaphoreTake(dataMutex, portMAX_DELAY)) {
-            sensorData.lat = gpsData.lat;
-            sensorData.lon = gpsData.lon;
-            sensorData.gps_altitude = gpsData.gps_altitude;
-            sensorData.vs = gpsData.vs;
-            gpsLogData.lat = gpsData.lat;
-            gpsLogData.lon = gpsData.lon;
-            gpsLogData.gps_altitude = gpsData.gps_altitude;
-            gpsLogData.vs = gpsData.vs;
-            xSemaphoreGive(dataMutex);
+        GPSData_t newGps = ReadGPS();
+        // Consider GPS invalid if all fields are zero (no fix / no speed)
+        const bool gpsValid = !(newGps.lat == 0.0 && newGps.lon == 0.0 && newGps.gps_altitude == 0.0 && newGps.vs == 0.0);
+
+        if (gpsValid) {
+            if (xSemaphoreTake(dataMutex, portMAX_DELAY)) {
+                gpsData.lat = newGps.lat;
+                gpsData.lon = newGps.lon;
+                gpsData.gps_altitude = newGps.gps_altitude;
+                gpsData.vs = newGps.vs;
+                xSemaphoreGive(dataMutex);
+            }
+            ConstructLogAndFillQueue(newGps);
+        } else {
+            Serial.println("INVALID GPS DATA");
         }
-        ConstructLogAndFillQueue(gpsLogData);
         vTaskDelayUntil(&lastWake, freq);
     }
 }

@@ -10,7 +10,7 @@ const float KMPH_MPS_CONVERT_RATE = 3.6;
 const int MS_PER_TICK = 5; // 200 Hz
 
 // Reads data from the IMU
-void ReadIMU(SensorData_t *data)
+void ReadIMU(IMUData_t *data)
 {
     lsm.read();
     sensors_event_t a, m, g, temp;
@@ -19,30 +19,20 @@ void ReadIMU(SensorData_t *data)
     data->ay = a.acceleration.y;
     data->az = a.acceleration.z;
 
-    data->gx = g.acceleration.x;
-    data->gy = g.acceleration.y;
-    data->gz = g.acceleration.z;
-
+    data->gx = g.gyro.x;
+    data->gy = g.gyro.y;
+    data->gz = g.gyro.z;
 }
 
 // Reads data from the barometer
-void ReadBaro(SensorData_t *data)
+void ReadBaro(BaroData_t *data)
 {
     data->altitude = bmp.readAltitude(SEA_LEVEL_PRESSURE);
     data->pressure = bmp.readPressure();
     data->temp = bmp.readTemperature();
 }
 
-// Combines IMU and Barometer data into a single data structure
-SensorData_t ReadImuBaro()
-{
-    SensorData_t data = {0};
-    ReadIMU(&data);
-    ReadBaro(&data);
-    return data;
-}
-
-// Gets IMU and Barometer data,
+// Gets IMU and Barometer data, writes to the shared per-sensor globals
 void ImuBaroTask(void *pvParameters)
 {
     TickType_t lastWake = xTaskGetTickCount();
@@ -50,29 +40,39 @@ void ImuBaroTask(void *pvParameters)
 
     for (;;)
     {
-        SensorData_t newData = ReadImuBaro();
-        IMUData_t imuLogData = {};
-        imuLogData.ax = newData.ax;
-        imuLogData.ay = newData.ay;
-        imuLogData.az = newData.az;
-        imuLogData.gx = newData.gx;
-        imuLogData.gy = newData.gy;
-        imuLogData.gz = newData.gz;
+        IMUData_t newImu = {0};
+        BaroData_t newBaro = {0};
+        ReadIMU(&newImu);
+        ReadBaro(&newBaro);
+        // Validate IMU: consider invalid if all accel and gyro samples are zero
+        const bool imuValid = !(newImu.ax == 0.0f && newImu.ay == 0.0f && newImu.az == 0.0f &&
+                                newImu.gx == 0.0f && newImu.gy == 0.0f && newImu.gz == 0.0f);
 
-        BaroData_t baroLogData = {};
-        baroLogData.altitude = newData.altitude;
-        baroLogData.pressure = newData.pressure;
-        baroLogData.temp = newData.temp;
-
-        ConstructLogAndFillQueue(imuLogData);
-        ConstructLogAndFillQueue(baroLogData);
+        // Validate Barometer: invalid if altitude, pressure and temp are all zero
+        const bool baroValid = !(newBaro.altitude == 0.0f && newBaro.pressure == 0.0f && newBaro.temp == 0.0f);
 
         if (xSemaphoreTake(dataMutex, portMAX_DELAY))
         {
-            sensorData = newData;
-            imuData = imuLogData;
-            baroData = baroLogData;
+            if (imuValid) {
+                imuData = newImu;
+                Serial.println(imuData.ax);
+            }
+            if (baroValid) {
+                baroData = newBaro;
+            }
             xSemaphoreGive(dataMutex);
+        }
+
+        if (imuValid) {
+            ConstructLogAndFillQueue(newImu);
+        } else {
+            Serial.println("INVALID IMU DATA");
+        }
+
+        if (baroValid) {
+            ConstructLogAndFillQueue(newBaro);
+        } else {
+            Serial.println("INVALID BARO DATA");
         }
         vTaskDelayUntil(&lastWake, freq);
     }
