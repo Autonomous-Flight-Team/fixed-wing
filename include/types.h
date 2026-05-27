@@ -118,11 +118,6 @@ typedef struct
     double p, q, r;
 } StateVector_t;
 
-typedef struct
-{
-    StateVector_t state;
-    Sensors_t sensor;
-} GSATxPacket_t;
 
 typedef struct
 {
