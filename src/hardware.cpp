@@ -11,7 +11,7 @@ Adafruit_LSM9DS1 lsm;
 // Initializes the IMU
 bool ImuInit()
 {
-    Wire.begin();
+    
     if (!lsm.begin())
         return false;
     lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_2G);
@@ -48,7 +48,14 @@ bool SDInit() {
     return true;
 }
 
+bool PitotInit() {
+    // Initialize I2C for the pitot device on SDA=16, SCL=17
+    Wire1.begin();
+    Wire1.setClock(100000);
+    return true;
+}
+
 // Initializes all Hardware
 bool HardwareInit() {
-    return ImuInit() && BaroInit() && GPSInit() && SDInit();
+    return ImuInit() && BaroInit() && GPSInit() && SDInit() && PitotInit();
 }

@@ -25,10 +25,7 @@ void PitotTask(void *pvParameters)
 {
     TickType_t lastWake = xTaskGetTickCount();
     const TickType_t freq = pdMS_TO_TICKS(MS_PER_TICK);
-    // Initialize I2C for the pitot device on SDA=16, SCL=17 (Teensy-style)
-    // If your platform requires a different Wire.begin overload, adjust here.
-    Wire.begin();
-    Wire.setClock(100000);
+
 
     for (;;)
     {
@@ -36,11 +33,11 @@ void PitotTask(void *pvParameters)
 
         // Read 2 bytes from the I2C differential pressure sensor.
         // Many Pixhawk kits provide a signed 16-bit differential pressure value.
-        Wire.requestFrom((uint8_t)PITOT_I2C_ADDR, (uint8_t)2);
-        if (Wire.available() >= 2)
+        Wire1.requestFrom((uint8_t)PITOT_I2C_ADDR, (uint8_t)2);
+        if (Wire1.available() >= 2)
         {
-            uint8_t hi = Wire.read();
-            uint8_t lo = Wire.read();
+            uint8_t hi = Wire1.read();
+            uint8_t lo = Wire1.read();
             int16_t raw = (int16_t)((hi << 8) | lo);
             float diff_pa = (float)raw * PITOT_RAW_TO_PASCAL;
 
