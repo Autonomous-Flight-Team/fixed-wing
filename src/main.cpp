@@ -274,7 +274,6 @@ void setup()
     // xTaskCreate(PIDTask, "PID", STACK_DEPTH, NULL, *priority, NULL);
     //  xTaskCreate(GSARxTask, "GSARx", STACK_DEPTH, NULL, *priority+3, NULL);
     //  xTaskCreate(GSATxTask, "GSATx", STACK_DEPTH, NULL, *priority+3, NULL);
-    Serial.println("[BOOT] starting scheduler");
 
     if (!CreateTaskChecked(BlinkTask, "Blink", STACK_DEPTH, kPriorityOne))
     {
@@ -301,7 +300,7 @@ void setup()
             FailStartup("Pitot task creation failed");
         }
     }
-    if (kEnablePlaceholderLogProducerTask &&
+    if (!kEnablePlaceholderLogProducerTask &&
         !CreateTaskChecked(PlaceholderLogProducerTask, "LogPlaceholder", STACK_DEPTH, kPriorityOne))
     {
         FailStartup("LogPlaceholder task creation failed");
@@ -320,7 +319,6 @@ void setup()
     {
         FailStartup("InitTx failed");
     }
-    Serial.println("[BOOT] starting scheduler");
 
     // manual
     if (!CreateTaskChecked(writeServoTask, "ServoWrite", 1024, kPriorityOne))
@@ -333,6 +331,8 @@ void setup()
     }
     // xTaskCreate(radioTask, "ReadRadio(RX)", 1024, NULL, 3, NULL); TODO: REPLACE WITH MAVLink tasks
     //xTaskCreate(printControllerTask, "PrintController", 2048, NULL, 1, NULL);
+    Serial.println("[BOOT] starting scheduler");
+
     vTaskStartScheduler();
 }
 

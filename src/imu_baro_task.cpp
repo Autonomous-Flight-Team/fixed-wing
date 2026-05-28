@@ -54,6 +54,7 @@ void ImuBaroTask(void *pvParameters)
         if (xSemaphoreTake(dataMutex, portMAX_DELAY))
         {
             if (imuValid) {
+                //Serial.println("imu valid!");
                 imuData = newImu;
                 Serial.println(imuData.ax);
             }

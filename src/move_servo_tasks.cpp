@@ -78,9 +78,9 @@ void set_state(mavlink_manual_control_t *controllerData, SetServoStates_t *servo
     for (int i = 0; i < 16; i++)
     {
         buttonState[i] = (controllerData->buttons >> i) & 1;
-        Serial.print(buttonState[i]);
+        //Serial.print(buttonState[i]);
     }
-    Serial.println();
+    //Serial.println();
 
     if (buttonState[5])
     {
