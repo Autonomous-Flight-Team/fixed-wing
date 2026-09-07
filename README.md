@@ -1,5 +1,23 @@
 # ✈️ Fixed Wing Code
 
+## 🚧 Project Status
+
+**Radio and Communication**
+
+1. Main fixed-wing-to-ground 900MHz MAVLink link tested and validated in real-world flight at expected distances and orientations, running on an RFD900x pair at 25 ms one-way latency, 200 kbps data rate, 460800 bps serial.
+2. Fixed-wing-to-quadcopter 2.4GHz relay link designed and implemented at 115200 bps, but not yet tested due to hardware procurement issues.
+3. Established a secure, stable connection with QGroundControl (QGC), displaying relevant telemetry and drone behavior, with QGC forwarding drone radio controller inputs over the main backlink.
+
+**Controls**
+
+1. Roll, pitch, and yaw servos respond correctly to their respective commanded inputs, but need to be tuned for real flight hardware.
+2. Main propeller motor bench tested successfully, powered by a 6S LiPo.
+
+**Telemetry**
+
+1. Basic sensor logging skeleton in place — functions, data structures, and FreeRTOS task implemented.
+2. Binary writes to a data file and Python-side interpretation on the host machine both working, but needs further bench testing and reworking to handle all possible data streams.
+
 ## 💻 Installation Instructions
 
 1. Install the [PlatformIO IDE](https://marketplace.visualstudio.com/items?itemName=platformio.platformio-ide) extension in VSCode. It may take several minutes to install.
